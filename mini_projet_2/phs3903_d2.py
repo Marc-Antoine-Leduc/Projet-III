@@ -1,30 +1,24 @@
-# PHS3903 - Projet de simulation
-# Mini-devoir 1
-
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
-from scipy import stats
 
 # Paramètres physiques du problème
 g = 9.81     # Champ gravitationnel (m²/s)
 m = 1.000    # Masse du pendule (kg)
 L = 1.000    # Longueur du câble (m)
-beta = 0.1  # Constante d'amortissement (1/s)
-pi = np.pi
+beta = 0.1   # Constante d'amortissement (1/s)
+pi = np.pi   # pi
 
 # Conditions initiales
-theta0 = pi/6         # Position initiale (rad)
+theta0 = pi/6       # Position initiale (rad)
 omega0 = 5          # Vitesse inititale (rad/s)
 
 # Paramètres généraux de simulation
 tf = 10             # Temps final (s)
-T = 2 * np.pi * np.sqrt(L / g)
-dt0 = T / 100  # Pas de temps le plus élevé (s)
+dt0 = 0.1           # Pas de temps le plus élevé (s)
 
 # Boucle sur le nombre de simulations
 K = 5                                       # Nombre de simulations
-dt_val = [dt0, 2*dt0, 4*dt0, 8*dt0, 16*dt0] # Vecteur des pas de temps pour chaque simulation
+dt_val = [dt0, dt0/2, dt0/4, dt0/8, dt0/16] # Vecteur des pas de temps pour chaque simulation
 thetaf = np.zeros(K)                        # Vecteur des positions finales pour chaque simulation
 position_finale = []                        # Initialiser un vecteur position finale
 firstTry = True
@@ -38,22 +32,22 @@ for k in range(0,K):
     t = np.linspace(0, tf, N)
     theta = np.zeros(N)
     theta[0] = theta0
-    theta[1] = theta0 + (1 - (beta * dt) / 2) * omega0 * dt - (g / (2 * L)) * np.sin(theta0) * dt**2
+    theta[1] = theta0 + (1 - (beta * dt) / 2) * omega0 * dt - (g * dt**2 / (2 * L)) * np.sin(theta0)
 
 # Exécution
-    for n in range(1, N - 1):
-        theta[n] =  (4 * theta[n] 
-                           - (2 - beta * dt) * theta[n - 1] 
-                           - (2 * g / L) * (dt**2 / 2) * np.sin(theta[n])) / (2 + beta * dt)
+    for n in range(2, len(theta)):
+        theta[n] =  (4 * theta[n-1] 
+                           - (2 - beta * dt) * theta[n - 2] 
+                           - (2 * g * (dt**2)/ L) * np.sin(theta[n-1])) / (2 + beta * dt)
     
-    position_finale.append(theta[n-1])
+    position_finale.append(theta[-1])
 
     if firstTry:
         plt.figure(figsize=(8, 5))
         plt.plot(t, theta, label=r'$\theta(t)$', color='b')
         plt.xlabel('Temps (s)')
         plt.ylabel('Angle $\Theta$ (rad)')
-        plt.title(r'Évolution de $\Theta(t)$ pour le pendule amorti avec un pas de temps de $0,02\pi\sqrt{\frac{1}{g}}$ s')
+        plt.title('Évolution de $\Theta(t)$ pour le pendule amorti avec un pas de temps de 0,1s')
         plt.grid()
         plt.show()
         firstTry = False
