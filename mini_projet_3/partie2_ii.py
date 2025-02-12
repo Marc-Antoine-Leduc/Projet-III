@@ -85,11 +85,12 @@ for n in range(nmax):
 
 T_eq_max = np.max(Tnp1)
 # Méthode implicite pour le régime transitoire
-dt = 1 * dx**2 #/ alpha  # Réduction de dt pour assurer la stabilité
+dt = 1 * dx**2 / alpha  # Réduction de dt pour assurer la stabilité
 time_elapsed = 0
 tolerance = 0.05 * (Tnp1 - Ta)
 T = Tnp1.copy()  # Initialiser avec la solution stationnaire
-B = csc_matrix(np.identity(N) - alpha * dt * A)
+B = (np.identity(N) - alpha * dt * A)
+
 
 # Stockage des valeurs pour le tracé
 time_values = []
@@ -100,7 +101,7 @@ T_max_values = []
 # Boucle temporelle
 for i in range(len(tolerance)):
     while T[i] < T_eq_max - tolerance[i]:
-        T = spsolve(B, T + dt * S_i / (rho * Cv))
+        T = np.linalg.solve(B, T + ((dt * S_i) / (rho * Cv)))
         time_elapsed += dt
         time_values.append(time_elapsed)
         T_max_values.append(np.max(T))
