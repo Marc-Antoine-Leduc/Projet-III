@@ -90,8 +90,8 @@ for fact in fact_ar:
     T=np.zeros((Nx*Ny,1),dtype=np.double);
     Tr=np.zeros((Ny,Nx),dtype=np.double);
     
-    for i in np.arange(1,Ny+1,1):
-        for j in np.arange(1,Nx+1,1):
+    for i in np.arange(1,Ny+1,1): 
+        for j in np.arange(1,Nx+1,1): 
             # remplir la ligne pl de la matrice M
             pl=(i-1)*Nx+j;
             
@@ -123,6 +123,40 @@ for fact in fact_ar:
                 pc=(i-1)*Nx+j-1;M[pl-1,pc-1]=-4; # contribution de noeud (i,Nx-1)
                 pc=(i-1)*Nx+j-2;M[pl-1,pc-1]=1; # contribution de noeud (i,Nx-2)
                 b[pl-1]=2*d*h*Ta/k[i-1,j-1];
+            
+            ##### Condition de continuité mur intérieur #####
+            elif (j==Lm/d+1) and (Lm/d<=i) and (i<=Ny-Lm/d):
+                #noeud à la surface du mur interne
+                pc=pl;M[pl-1,pc-1]=3*(km+ka)
+                pc=(i-1)*Nx+j-1;M[pl-1,pc-1]=-4*km
+                pc=(i-1)*Nx+j-2;M[pl-1,pc-1]=km
+                pc=(i-1)*Nx+j+1;M[pl-1,pc-1]=-4*ka
+                pc=(i-1)*Nx+j+2;M[pl-1,pc-1]=ka
+                b[pl-1] = 0
+            elif (j==Nx-Lm/d) and (Lm/d<=i) and (i<=Ny-Lm/d):
+                # noeud à la surface du mur interne
+                pc=pl;M[pl-1,pc-1]=3*(ka+km)
+                pc=(i-1)*Nx+j-1;M[pl-1,pc-1]=-4*ka
+                pc=(i-1)*Nx+j-2;M[pl-1,pc-1]=ka
+                pc=(i-1)*Nx+j+1;M[pl-1,pc-1]=-4*km
+                pc=(i-1)*Nx+j+2;M[pl-1,pc-1]=km
+                b[pl-1] = 0
+            elif (i==Lm/d+1) and (Lm/d<=j) and (j<=Nx-Lm/d):
+                #Plafond
+                pc=pl;M[pl-1,pc-1]=3*(km+ka)
+                pc=(i-2)*Nx+j;M[pl-1,pc-1]=-4*km
+                pc=(i-3)*Nx+j;M[pl-1,pc-1]=km
+                pc=(i)*Nx+j;M[pl-1,pc-1]=-4*ka
+                pc=(i+1)*Nx+j;M[pl-1,pc-1]=ka
+                b[pl] = 0
+            elif (i==Ny-Lm/d) and (Lm/d<=j) and (j<=Nx-Lm/d):
+                #Plancher
+                pc=pl;M[pl,pc]=3*(ka+km)
+                pc=(i-2)*Nx+j;M[pl-1,pc-1]=-4*ka
+                pc=(i-3)*Nx+j;M[pl-1,pc-1]=ka
+                pc=(i)*Nx+j;M[pl-1,pc-1]=-4*km
+                pc=(i+1)*Nx+j;M[pl-1,pc-1]=km
+                b[pl] = 0
             else:
                 print('Erreur dans la définition de la matrice de coefficients');
 
