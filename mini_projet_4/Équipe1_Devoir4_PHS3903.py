@@ -309,5 +309,28 @@ if fact_ar.size > 1:
     print(f"\n=== Ajustement Erreur : Err ~ A * d^p ===")
     print(f"p_err = {p_err:.3f}, A_err = {A_err:.3e}")
 
-plt.show()
+# pente = (np.log(mem_ar[-1])-np.log(mem_ar[0]))/(np.log(d_ar[-1])-np.log(d_ar[0]))
+# oao = np.log(mem_ar[0]) - pente * np.log(d_ar[0])
+# d_2048 = ((np.log(2048)) - oao)/pente
+# print(f"Le pas de discrétisation minimale pour une mémoire de 2048Gb est {d_2048}")
 
+# Transformation logarithmique
+d_array = np.array(d_ar)
+mem_array = np.array(mem_ar)
+log_d = np.log(d_array)
+log_mem = np.log(mem_array)
+
+# Ajustement d'une droite (régression linéaire)
+coeffs = np.polyfit(log_d, log_mem, 1)  # coeffs[0] = b, coeffs[1] = log(a)
+
+# Récupération des coefficients du modèle y = a * x^b
+b = coeffs[0]
+a = np.exp(coeffs[1])
+
+mem_extrapol = 2048e9
+d_extrapol = (mem_extrapol / a) ** (1 / b)
+
+print(f"Valeur extrapolée de x pour y={mem_extrapol}: {d_extrapol}")
+
+t_ini = A_tini * (d_extrapol ** p_tini)
+print(f"Pour un pas de d={d_extrapol}, le temps d'initialisation estimé est de {t_ini}")
