@@ -1,6 +1,9 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.sparse import lil_matrix
+from scipy.sparse.linalg import spsolve
+
 
 # Distribution de la température dans un appartement d'un immeuble aux plusieurs étages
 
@@ -85,7 +88,7 @@ for fact in fact_ar:
                 # À l'intérieurde de l'appartement
                 k[i-1,j-1]=ka;
                
-    M=np.zeros((Nx*Ny,Nx*Ny),dtype=np.double);
+    M = lil_matrix((Nx*Ny, Nx*Ny), dtype=np.double)
     b=np.zeros((Nx*Ny,1),dtype=np.double);
     T=np.zeros((Nx*Ny,1),dtype=np.double);
     Tr=np.zeros((Ny,Nx),dtype=np.double);
@@ -205,7 +208,9 @@ for fact in fact_ar:
     tini_ar[ci]=(toc-tic)/1.0e9; #temps en [s]  
     
     tic=time.time_ns();
-    T=np.linalg.solve(M,b);
+    M_csr = M.tocsr()
+    T_sparse = spsolve(M_csr, b.ravel())   # b.ravel() pour obtenir un vecteur 1D
+    T = T_sparse.reshape((Nx*Ny, 1))       # on remet en forme (Nx*Ny,1)
     toc=time.time_ns();
     tinv_ar[ci]=(toc-tic)/1.0e9; #temps en [s]  
     
@@ -327,7 +332,7 @@ A_tinv = np.exp(coeff_tinv[1])
 print(f"\n=== Ajustement t_inv : t_inv ~ A * N^p ===")
 print(f"p_tinv = {p_tinv:.3f}, A_tinv = {A_tinv:.3e}")
 
-# Ajustement erreur 
+# Ajustement erreur (si on veut en fonction de delta)
 # 1 point de moins dans Err_ar, donc on prend d_ar[1:]
 if fact_ar.size > 1:
     logD = np.log(d_ar[1:])
