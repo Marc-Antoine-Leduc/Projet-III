@@ -27,12 +27,12 @@ Ly=2.4;  #[m]
 # Parametres d'un mur d'isolation thermique
 Lm=0.4; #m ; Épaisseur du mur en brique
 km=0.85;#W/(m*K); La conductivité thermique de la brique
-h=1; #W/(m^2*K); Coefficient de transfert thermique sur les surfaces extérieures du mur
+h=10; #W/(m^2*K); Coefficient de transfert thermique sur les surfaces extérieures du mur
 
 # Paramètres de l'air qui remplit l'appartement
 ka=0.024;
 
-fact_ar = np.array([2.0, 1.0, 0.5, 0.25], dtype=np.double); # Matrice pleine
+fact_ar = np.array([1.0, 0.5], dtype=np.double)    # [1.0, 0.5, 0.25, 0.125, 0.0625]
 d_ar=np.zeros(fact_ar.size,dtype=np.double);
 tini_ar=np.zeros(fact_ar.size,dtype=np.double);
 tinv_ar=np.zeros(fact_ar.size,dtype=np.double);
@@ -65,7 +65,7 @@ for fact in fact_ar:
             # La source est intégrée dans les parties intérieures du mur à x=Lm et à x=Lx-Lm et
             # il occupe les tiers du mur dans la direction verticale
             dL=0.1;
-            q=1.0e3;# W/m^3;
+            q=2.0e4;# W/m^3;
             if ((x<=Lm) and (y<=Ly/3+Lm) and (y>Lm)):
                 # À l'intérieur de l'élément chauffant
                 S[i-1,j-1]=q*np.exp(-((x-Lm)/dL)**2);
@@ -210,7 +210,6 @@ for fact in fact_ar:
     tinv_ar[ci]=(toc-tic)/1.0e9; #temps en [s]  
     
     mem_ar[ci]=8*(Nx*Ny)**2;
-    
     Tr=np.reshape(T,(Ny,Nx),order='C');
     
     Tm_ar[ci]=Tr[int(np.rint(Ly/d/2+1))-1,int(np.rint(Lx/d/2+1))-1]; # température au milieu du domaine de calcul
@@ -221,7 +220,7 @@ plt.colorbar(mappable=None, cax=None, ax=None);
 plt.title('S(x,y) [W/$m^3$]')
 plt.xlabel('x [m]')    
 plt.ylabel('y [m]')
-plt.show()
+
 
 plt.figure(2)
 plt.pcolor(np.arange(0,Nx,1)*d,np.arange(0,Ny,1)*d,k);
@@ -229,7 +228,7 @@ plt.colorbar(mappable=None, cax=None, ax=None);
 plt.title('k(x,y) [W/($m^2\cdot$K)]')
 plt.xlabel('x [m]')    
 plt.ylabel('y [m]')
-plt.show()
+
 
 plt.figure(3)
 plt.pcolor(np.arange(0,Nx,1)*d,np.arange(0,Ny,1)*d,Tr);
@@ -237,7 +236,6 @@ plt.colorbar(mappable=None, cax=None, ax=None);
 plt.title('T(x,y) [$^o$C]')
 plt.xlabel('x [m]')    
 plt.ylabel('y [m]')
-plt.show()
 
 plt.figure(4)
 plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
@@ -259,3 +257,86 @@ plt.title('Temps de calcul(initialisation et inversion)')
 plt.xlabel('Pas $d_x=d_y$ [m]')
 plt.ylabel('t [s]')
 plt.legend(['$t_{initialisation}$','$t_{inversion}$'])
+
+print("\n=== Résultats numériques ===")
+print("Pas (cm)   T_m (°C)    Mémoire (octets)")
+for i in range(fact_ar.size):
+    d_cm = d_ar[i]*100
+    Tm   = Tm_ar[i]
+    mem_bytes = mem_ar[i]
+    print(f"{d_cm:8.3f}   {Tm:8.3f}   {mem_bytes:12.0f}")
+
+
+print("\n=== Erreur entre deux pas successifs ===")
+print("delta1 (cm)   delta2 (cm)   Err (°C)")
+for i in range(fact_ar.size - 1):
+    d1_cm = d_ar[i]*100
+    d2_cm = d_ar[i+1]*100
+    print(f"{d1_cm:8.3f}    {d2_cm:8.3f}    {Err_ar[i]:8.4f}")
+
+plt.figure()
+plt.pcolor(
+    np.arange(0, Nx, 1)*d_ar[-1],  # coordonnée X
+    np.arange(0, Ny, 1)*d_ar[-1],  # coordonnée Y
+    Tr
+)
+plt.colorbar()
+plt.title(f"Distribution de T pour d={d_ar[-1]*100:.3f} cm")
+plt.xlabel("x [m]")
+plt.ylabel("y [m]")
+
+print("\n=== Résultats du maillage ===")
+for i in range(fact_ar.size):
+    print(f"delta = {d_ar[i]:.4f} m => Nx={int(np.rint(Lx/d_ar[i]+1))}, Ny={int(np.rint(Ly/d_ar[i]+1))}, "
+          f"mem={mem_ar[i]:.2e} octets, t_ini={tini_ar[i]:.3g}s, t_inv={tinv_ar[i]:.3g}s, Tm={Tm_ar[i]:.3g}°C")
+
+# Tableau N_ar = Nx * Ny
+N_ar = np.zeros(fact_ar.size, dtype=np.double)
+for i in range(fact_ar.size):
+    Nx_ = int(np.rint(Lx/d_ar[i]+1))
+    Ny_ = int(np.rint(Ly/d_ar[i]+1))
+    N_ar[i] = Nx_*Ny_
+
+# Ajustement mémoire en log-log
+import numpy as np
+logN = np.log(N_ar)
+logMem = np.log(mem_ar)
+
+coeff_mem = np.polyfit(logN, logMem, 1)
+p_mem = coeff_mem[0]
+A_mem = np.exp(coeff_mem[1])
+
+print(f"\n=== Ajustement mémoire : mem ~ A * N^p ===")
+print(f"p_mem = {p_mem:.3f}, A_mem = {A_mem:.3e}")
+
+# Ajustement t_ini en log-log
+logTini = np.log(tini_ar)
+coeff_tini = np.polyfit(logN, logTini, 1)
+p_tini = coeff_tini[0]
+A_tini = np.exp(coeff_tini[1])
+
+print(f"\n=== Ajustement t_ini : t_ini ~ A * N^p ===")
+print(f"p_tini = {p_tini:.3f}, A_tini = {A_tini:.3e}")
+
+# Ajustement t_inv en log-log
+logTinv = np.log(tinv_ar)
+coeff_tinv = np.polyfit(logN, logTinv, 1)
+p_tinv = coeff_tinv[0]
+A_tinv = np.exp(coeff_tinv[1])
+
+print(f"\n=== Ajustement t_inv : t_inv ~ A * N^p ===")
+print(f"p_tinv = {p_tinv:.3f}, A_tinv = {A_tinv:.3e}")
+
+# Ajustement erreur 
+# 1 point de moins dans Err_ar, donc on prend d_ar[1:]
+if fact_ar.size > 1:
+    logD = np.log(d_ar[1:])
+    logErr = np.log(Err_ar)
+    coeff_err = np.polyfit(logD, logErr, 1)
+    p_err = coeff_err[0]
+    A_err = np.exp(coeff_err[1])
+    print(f"\n=== Ajustement Erreur : Err ~ A * d^p ===")
+    print(f"p_err = {p_err:.3f}, A_err = {A_err:.3e}")
+
+plt.show()
+
