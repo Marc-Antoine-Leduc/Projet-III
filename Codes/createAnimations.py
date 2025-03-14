@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -50,7 +51,17 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
         return img, # We return the result ready to use with blit=True.
 
 
-    anim = FuncAnimation(fig, animate, interval=1, frames =np.arange(0,Nt,2), repeat=False, blit=0) # We generate the animation.# Generamos la animación.
+    anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
+
+    # Sauvegarde avant d'afficher l'animation
+    output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "animationsName.mp4")
+
+    print(f"Enregistrement de l'animation dans : {output_file}")
+    anim.save(output_file, writer="ffmpeg", fps=60)
+
+    # anim = FuncAnimation(fig, animate, interval=1, frames =np.arange(0,Nt,2), repeat=False, blit=0) # We generate the animation.# Generamos la animación.
     plt.show() # We finally show the animation.
 
     ## Save the animation (Ubuntu).
@@ -107,10 +118,12 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
 
 
     anim = FuncAnimation(fig, animate, interval=1, frames =np.arange(0,Nt,2), repeat=False, blit=0) # We generate the animation.# Generamos la animación.
+
     plt.show() # We finally show the animation.
 
-    ## Save the animation (Ubuntu).
-    # anim.save('./animationsName.mp4', writer="ffmpeg", fps=60)
+    # Save the animation (Ubuntu).
+    anim.save('./animationsName.mp4', writer="ffmpeg", fps=60)
+
 
     return anim
 ####################################################

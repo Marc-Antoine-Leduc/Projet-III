@@ -37,13 +37,14 @@ def potentiel_periodique(y, a, sigma=1, L=10):
     
     return V_total
 
-def potentielSlits(Dy, Ny):
+def potentielSlits(Dy, Ny, L):
     """
     Créer deux fentes.
 
     Args :
         Dy (float) : Pas en y.
         Ny (int) : Grandeur du grillage en y. 
+        L (int) : Grandeur de la simulation.
 
     Returns : 
         j0, j1, i0, i1, i2, i3 (float) : Dimensions des fentes.
