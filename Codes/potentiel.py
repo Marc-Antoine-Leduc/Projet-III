@@ -41,7 +41,7 @@ if __name__ == "__main__":
     y = np.linspace(-10, 10, 1000)
     
     sigma = 0.5  # écart-type
-    a = 2.0     # paramètre de maille
+    a = 5.0     # paramètre de maille
     L = 5       # nombre d'atomes de chaque côté
     
     V_single = potentiel(y, mu=0, sigma=sigma)
