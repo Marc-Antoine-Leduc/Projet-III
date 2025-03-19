@@ -4,9 +4,54 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Rectangle
 
+def makeBasicAnimation(mod_psis, Nt, L):
+    """
+    Créer une animation avec le domaine seulement.
+
+    Args :
+        mod_psis (array) : Vecteur de fonctions d'onde discrétisées.
+        Nt (int) : Nombre de pas de temps.
+        L (int) : Grandeur du domaine de simulation.
+
+    Returns :
+        anim (plot) : Animation de la fonction d'onde.
+    """
+    fig = plt.figure() # On crée la figure.
+    ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L)) # On ajoute un subplot avec le domaine de longueur L.
+
+    img = ax.imshow(mod_psis[0], extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis), zorder=1) # Module de la fonction d'onde 2D.
+
+    def animate(i):
+        """
+        On crée l'animation.
+        """
+        img.set_data(mod_psis[i]**2) # Mettre les modules de la fonction d'onde dans img.
+        img.set_zorder(1)
+        
+        return img,
+
+
+    anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
+
+    # Sauvegarde avant d'afficher l'animation
+    output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "test2.mp4")
+
+    print(f"Enregistrement de l'animation dans : {output_file}")
+    anim.save(output_file, writer="ffmpeg", fps=60)
+
+    plt.show()
+
+    ## Enregistrer l'animation (Ubuntu).
+    # anim.save('./animationsName.mp4', writer="ffmpeg", fps=60)
+
+    return anim
+####################################################
+
 def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     """
-    Créer une animation avec le vecteur de fonctions d'onde.
+    Créer une animation pour les doubles fentes. 
 
     Args :
         mod_psis (array) : Vecteur de fonctions d'onde discrétisées.
@@ -45,7 +90,7 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
 
     def animate(i):
         
-        img.set_data(mod_psis[i]) # Fill img with the modulus data of the wave function.
+        img.set_data(mod_psis[i]**2) # Fill img with the modulus data of the wave function.
         img.set_zorder(1)
         
         return img, # We return the result ready to use with blit=True.
@@ -56,12 +101,11 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     # Sauvegarde avant d'afficher l'animation
     output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "animationsName.mp4")
+    output_file = os.path.join(output_dir, "test3.mp4")
 
     print(f"Enregistrement de l'animation dans : {output_file}")
     anim.save(output_file, writer="ffmpeg", fps=60)
 
-    # anim = FuncAnimation(fig, animate, interval=1, frames =np.arange(0,Nt,2), repeat=False, blit=0) # We generate the animation.# Generamos la animación.
     plt.show() # We finally show the animation.
 
     ## Save the animation (Ubuntu).
@@ -72,7 +116,7 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
 
 def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     """
-    Créer une animation avec le vecteur de fonctions d'onde.
+    Créer une animation pour le cristal 2D.
 
     Args :
         mod_psis (array) : Vecteur de fonctions d'onde discrétisées.

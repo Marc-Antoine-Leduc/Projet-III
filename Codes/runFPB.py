@@ -10,6 +10,7 @@ if __name__ == "__main__":
     Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
     Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
     Nt = 500 # Nombre de points de temps.
+    v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
 
     # Position initial du faisceau d'électrons.
     x0 = L/5
@@ -22,4 +23,5 @@ if __name__ == "__main__":
     A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
     mod_psis = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0)
 
+    # animation = makeBasicAnimation(mod_psis, Nt, L)
     animation = makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L)
