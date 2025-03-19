@@ -34,7 +34,7 @@ def makeBasicAnimation(mod_psis, Nt, L):
     anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
 
     # Sauvegarde avant d'afficher l'animation
-    output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
+    output_dir = r"."
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "basicAnimation.mp4")
 
@@ -96,7 +96,7 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
 
     # Sauvegarde avant d'afficher l'animation
-    output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
+    output_dir = r"."
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "doubleSlitsAnimation.mp4")
 
