@@ -19,7 +19,7 @@ def makeBasicAnimation(mod_psis, Nt, L):
     fig = plt.figure() # On crée la figure.
     ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L)) # On ajoute un subplot avec le domaine de longueur L.
 
-    img = ax.imshow(mod_psis[0], extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis), zorder=1) # Module de la fonction d'onde 2D.
+    img = ax.imshow(mod_psis[0]**2, extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis)**2, zorder=1) # Densité de probabilité 2D.
 
     def animate(i):
         """
@@ -36,15 +36,12 @@ def makeBasicAnimation(mod_psis, Nt, L):
     # Sauvegarde avant d'afficher l'animation
     output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "test2.mp4")
+    output_file = os.path.join(output_dir, "basicAnimation.mp4")
 
     print(f"Enregistrement de l'animation dans : {output_file}")
     anim.save(output_file, writer="ffmpeg", fps=60)
 
     plt.show()
-
-    ## Enregistrer l'animation (Ubuntu).
-    # anim.save('./animationsName.mp4', writer="ffmpeg", fps=60)
 
     return anim
 ####################################################
@@ -69,31 +66,31 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     Returns :
         anim (plot) : Animation de la fonction d'onde.
     """
-    fig = plt.figure() # We create the figure.
-    ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L)) # We add the subplot to the figure.
+    fig = plt.figure() # On crée la figure.
+    ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L)) # On ajoute le subplot du domaine.
 
-    img = ax.imshow(mod_psis[0], extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis), zorder=1) # Here the modulus of the 2D wave function shall be represented.
+    img = ax.imshow(mod_psis[0]**2, extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis)**2, zorder=1) # Densité de probabilité 2D.
 
-    # We paint the walls of the double slit with rectangles.
-    slitcolor = "w" # Color of the rectangles.
-    slitalpha = 0.08 # Transparency of the rectangles.
-    wall_bottom = Rectangle((j0*Dy,0),     w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha) # (x0, y0), width, height
+    # On ajoute les doubles fentes (les murs).
+    slitcolor = "w" # Couleurs des murs.
+    slitalpha = 0.08 # Transparence des murs.
+    wall_bottom = Rectangle((j0*Dy,0),     w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha) # (x0, y0), largeur, hauteur
     wall_middle = Rectangle((j0*Dy,i2*Dy), w, (i1-i2)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)
     wall_top    = Rectangle((j0*Dy,i0*Dy), w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
 
-    # We add the rectangular patches to the plot.
+    # On ajoute les murs dans la figures.
     ax.add_patch(wall_bottom)
     ax.add_patch(wall_middle)
     ax.add_patch(wall_top)
 
-    # We define the animation function for FuncAnimation.
-
     def animate(i):
-        
-        img.set_data(mod_psis[i]**2) # Fill img with the modulus data of the wave function.
+        """
+        On crée l'animation.
+        """
+        img.set_data(mod_psis[i]**2) # Mettre les modules de la fonction d'onde dans img.
         img.set_zorder(1)
         
-        return img, # We return the result ready to use with blit=True.
+        return img, 
 
 
     anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
@@ -101,15 +98,12 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     # Sauvegarde avant d'afficher l'animation
     output_dir = r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats"
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "test3.mp4")
+    output_file = os.path.join(output_dir, "doubleSlitsAnimation.mp4")
 
     print(f"Enregistrement de l'animation dans : {output_file}")
     anim.save(output_file, writer="ffmpeg", fps=60)
 
-    plt.show() # We finally show the animation.
-
-    ## Save the animation (Ubuntu).
-    # anim.save('./animationsName.mp4', writer="ffmpeg", fps=60)
+    plt.show()
 
     return anim
 ####################################################
