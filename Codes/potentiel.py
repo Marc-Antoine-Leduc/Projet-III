@@ -37,7 +37,7 @@ def potentiel_periodique(y, a, sigma=1, L=10):
     
     return V_total
 
-def potentielSlits(Dy, Ny, L):
+def potentielSlits(Dy, Ny, L, k):
     """
     Créer deux fentes.
 
@@ -54,7 +54,7 @@ def potentielSlits(Dy, Ny, L):
     # Parameters of the double slit.
     w = 0.6 # Width of the walls of the double slit.
     s = 0.8 # Separation between the edges of the slits.
-    a = 0.2 # Aperture of the slits.
+    a = np.pi * 2 /k # Aperture of the slits.
 
     # Indices that parameterize the double slit in the space of points.
     # Horizontal axis.
