@@ -77,7 +77,14 @@ def potentielSlits(Dy, Ny, L):
     return j0, j1, i0, i1, i2, i3, v, w
 
 
-def potentiel_absorbant(x, y, L, d_abs=0.5, strength=100):
+def potentiel_absorbant(x, y, L, v, d_abs=0.5, strength=100):
+    """
+    Essaie pour ne pas avoir de réflexsion.
+    """
+    # x = np.linspace(0, L, Ny)  # Coordonnées complètes (y compris bords)
+    # y = np.linspace(0, L, Ny)
+    # x, y = np.meshgrid(x, y)
+
     v_abs = np.zeros_like(x, dtype=complex)
     mask_right = x > (L - d_abs)
     v_abs[mask_right] = 1j * strength * ((x[mask_right] - (L - d_abs)) / d_abs)**2
@@ -87,6 +94,11 @@ def potentiel_absorbant(x, y, L, d_abs=0.5, strength=100):
     v_abs[mask_top] += 1j * strength * ((y[mask_top] - (L - d_abs)) / d_abs)**2
     mask_bottom = y < d_abs
     v_abs[mask_bottom] += 1j * strength * ((d_abs - y[mask_bottom]) / d_abs)**2
+
+    plt.imshow(np.abs(v), extent=[0, L, 0, L], origin='lower')
+    plt.colorbar(label='|v|')
+    plt.title('Potentiel total (fentes + absorbant)')
+
     return v_abs  # Imaginaire car introduit une perte, analogue à partie imaginaire de la permittivité électrique
 
 if __name__ == "__main__":

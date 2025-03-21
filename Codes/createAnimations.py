@@ -66,7 +66,7 @@ def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
 
     # Ajout des doubles fentes (murs)
     slitcolor = "w"
-    slitalpha = 0.08
+    slitalpha = 0.08 # Transparance des murs.
     wall_bottom = Rectangle((j0*Dy,0),     w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
     wall_middle = Rectangle((j0*Dy,i2*Dy), w, (i1-i2)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)
     wall_top    = Rectangle((j0*Dy,i0*Dy), w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
@@ -113,24 +113,21 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     Returns :
         anim (plot) : Animation de la fonction d'onde.
     """
-    fig = plt.figure() # We create the figure.
-    ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L)) # We add the subplot to the figure.
+    fig = plt.figure() 
+    ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L)) 
 
-    img = ax.imshow(mod_psis[0], extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis), zorder=1) # Here the modulus of the 2D wave function shall be represented.
+    img = ax.imshow(mod_psis[0], extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, vmax=np.max(mod_psis), zorder=1) 
 
-    # We paint the walls of the double slit with rectangles.
-    slitcolor = "w" # Color of the rectangles.
-    slitalpha = 0.08 # Transparency of the rectangles.
+    # On crée les murs.
+    slitcolor = "w" 
+    slitalpha = 0.08 # Transparence des murs.
     wall_bottom = Rectangle((j0*Dy,0),     w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha) # (x0, y0), width, height
     wall_middle = Rectangle((j0*Dy,i2*Dy), w, (i1-i2)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)
     wall_top    = Rectangle((j0*Dy,i0*Dy), w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
 
-    # We add the rectangular patches to the plot.
     ax.add_patch(wall_bottom)
     ax.add_patch(wall_middle)
     ax.add_patch(wall_top)
-
-    # We define the animation function for FuncAnimation.
 
     def animate(i):
         img.set_data(mod_psis[i]**2)  
@@ -141,51 +138,80 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
 
     anim = FuncAnimation(fig, animate, interval=1, frames =np.arange(0,Nt,2), repeat=False, blit=0) # We generate the animation.# Generamos la animación.
 
-    plt.show() # We finally show the animation.
+    plt.show()
 
-    # Save the animation (Ubuntu).
     anim.save('./animationsName.mp4', writer="ffmpeg", fps=60)
 
 
     return anim
 ####################################################
 
-def saveData(mod_psis):
+def diffractionPatron(mod_psis, L, Ny):
     """
-    Enregistrer l'animation.
-
-    Args : 
-        mod_psis (plot) : Animation
-    """
-    
-    # We transform the 3D array into a 2D array to save it with numpy.savetxt.
-    mod_psis_reshaped = np.asarray(mod_psis).reshape(np.asarray(mod_psis).shape[0], -1) 
-    
-    # We save the 2D array as a text file.
-    np.savetxt(r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats", mod_psis_reshaped)
-    
-####################################################
-
-def obtainData(Ny): 
-    """
-    Obtenir le data d'un vecteur de fonctions d'onde déjà créé.
+    Crée une figure montrant le patron de diffraction de la densité de probabilité.
 
     Args :
+        mod_psis (array) : Vecteur de fonctions d'onde discrétisées.
+        L (int) : Longueur du domaine. 
         Ny (int) : Grandeur du grillage en y.
+    
+    Returns :
+        final_psi (array) : Norme de la fonction d'onde sur l'écran.
     """
-    
-    # To obtain the data from the text file already created earlier.
-    loaded_mod_psis = np.loadtxt("mod_psis_data.txt")
-    
-    # The loaded_mod_psis array is a 2D array, we need to return it to its original form.
+    final_psi = mod_psis[-1]  # Dernière étape temporelle
+    screen_intensity = np.abs(final_psi[:, -1])**2  # Intensité (|psi|^2) sur le bord droit
+    y_screen = np.linspace(0, L, Ny-2)  # Coordonnées y le long de l’écran
 
-    mod_psisshape2 = Ny-2
+    # Affichage du patron de diffraction
+    plt.figure(figsize=(8, 6))
+    plt.plot(y_screen, screen_intensity, label='Patron de diffraction')
+    plt.xlabel('Position y')
+    plt.ylabel('Intensité (|ψ|^2)')
+    plt.title('Patron de diffraction sur l’écran à x = L')
+    plt.grid(True)
+    plt.legend()
 
-    # We finally obtain our mod_psis array.
+    plt.show()
 
-    mod_psis = loaded_mod_psis.reshape( 
-        loaded_mod_psis.shape[0], loaded_mod_psis.shape[1] // mod_psisshape2, mod_psisshape2) 
+    return final_psi
+####################################################
+
+# def saveData(mod_psis):
+#     """
+#     Enregistrer l'animation.
+
+#     Args : 
+#         mod_psis (plot) : Animation
+#     """
     
-    ## For deleting the auxiliary 2D array.
-    # del loaded_mod_psis
+#     # We transform the 3D array into a 2D array to save it with numpy.savetxt.
+#     mod_psis_reshaped = np.asarray(mod_psis).reshape(np.asarray(mod_psis).shape[0], -1) 
+    
+#     # We save the 2D array as a text file.
+#     np.savetxt(r"C:\Users\leduc\OneDrive\Documents\École\Université\Session 6\PHS3903 - Projet III\Résultats", mod_psis_reshaped)
+    
+# ####################################################
+
+# def obtainData(Ny): 
+#     """
+#     Obtenir le data d'un vecteur de fonctions d'onde déjà créé.
+
+#     Args :
+#         Ny (int) : Grandeur du grillage en y.
+#     """
+    
+#     # To obtain the data from the text file already created earlier.
+#     loaded_mod_psis = np.loadtxt("mod_psis_data.txt")
+    
+#     # The loaded_mod_psis array is a 2D array, we need to return it to its original form.
+
+#     mod_psisshape2 = Ny-2
+
+#     # We finally obtain our mod_psis array.
+
+#     mod_psis = loaded_mod_psis.reshape( 
+#         loaded_mod_psis.shape[0], loaded_mod_psis.shape[1] // mod_psisshape2, mod_psisshape2) 
+    
+#     ## For deleting the auxiliary 2D array.
+#     # del loaded_mod_psis
     
