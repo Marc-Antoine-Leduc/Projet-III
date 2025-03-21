@@ -8,23 +8,8 @@ from scipy.sparse.linalg import factorized
 from scipy.sparse import lil_matrix, diags
 
 def psi0(x, y, x0, y0, sigma=0.5, k=15*np.pi):
-    """
-    Fonction d'onde à t=0 (condition initiale).
-
-    Args :
-        sigma (float) : Écart-type (défini à 0.5).
-        k (complex) : Nombre d'onde. Proportionnel à la quantité de mouvement (15*np.pi).
-        (x0, y0) (float) : Positions initiales.
-        (x, y) (float) : Système de coordonnées.
-        
-    Note : 
-        si Dy=0.1, utiliser np.exp(-1j*k*(x-x0)), si Dy=0.05, utiliser 
-        np.exp(1j*k*(x-x0)) afin que la particule se déplace vers la droite.
-    
-    Returns :
-        conditionInitiale (complex) : Fonction d'onde à t=0.
-    """
-    conditionInitiale = np.exp(-1/2*((x-x0)**2 + (y-y0)**2)/sigma**2)*np.exp(1j*k*(x-x0))
+    N = 1 / (sigma * np.sqrt(np.pi))  # Facteur de normalisation
+    conditionInitiale = N * np.exp(-1/2*((x-x0)**2 + (y-y0)**2)/sigma**2) * np.exp(1j*k*(x-x0))
     return conditionInitiale
 
 
@@ -106,6 +91,8 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
     mod_psis = [np.abs(psi)]  # Stocker directement le module
 
+    initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
+
     for i in range(1, Nt):
         psi_vect = psi.reshape(Ni)
         b = M @ psi_vect  # Utilisation directe de l'opérateur sparse
@@ -124,7 +111,7 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
         mod_psis.append(np.abs(psi)) 
 
-    return mod_psis
+    return mod_psis, initial_norm
 
 ################################################################################
 # Ancienne fonctions qui prenaient beaucoup, beaucoup de mémoire et de temps...#

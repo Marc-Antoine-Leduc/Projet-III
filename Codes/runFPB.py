@@ -32,13 +32,17 @@ if __name__ == "__main__":
     
 
     A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
-    mod_psis = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
-
-    animation = makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L)
+    mod_psis, initial_norm = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
 
     final_psi = mod_psis[-1]  # Dernière étape temporelle
     screen_intensity = np.abs(final_psi[:, -1])**2  # Intensité (|psi|^2) sur le bord droit
     y_screen = np.linspace(0, L, Ny-2)  # Coordonnées y le long de l’écran
+
+    final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
+
+    print(f"Probabilité totale initiale : {initial_norm}")
+    print(f"Probabilité totale finale : {final_norm}")
+    print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
     # Affichage du patron de diffraction
     plt.figure(figsize=(8, 6))
@@ -50,3 +54,6 @@ if __name__ == "__main__":
     plt.legend()
 
     plt.show()
+
+    animation = makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L)
+
