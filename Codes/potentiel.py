@@ -76,6 +76,19 @@ def potentielSlits(Dy, Ny, L):
 
     return j0, j1, i0, i1, i2, i3, v, w
 
+
+def potentiel_absorbant(x, y, L, d_abs=0.5, strength=100):
+    v_abs = np.zeros_like(x, dtype=complex)
+    mask_right = x > (L - d_abs)
+    v_abs[mask_right] = 1j * strength * ((x[mask_right] - (L - d_abs)) / d_abs)**2
+    mask_left = x < d_abs
+    v_abs[mask_left] = 1j * strength * ((d_abs - x[mask_left]) / d_abs)**2
+    mask_top = y > (L - d_abs)
+    v_abs[mask_top] += 1j * strength * ((y[mask_top] - (L - d_abs)) / d_abs)**2
+    mask_bottom = y < d_abs
+    v_abs[mask_bottom] += 1j * strength * ((d_abs - y[mask_bottom]) / d_abs)**2
+    return v_abs  # Imaginaire car introduit une perte, analogue à partie imaginaire de la permittivité électrique
+
 if __name__ == "__main__":
     y = np.linspace(-10, 10, 1000)
     

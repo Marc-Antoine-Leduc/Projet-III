@@ -26,7 +26,7 @@ def psi0(x, y, x0, y0, sigma=0.5, k=15*np.pi):
     """
     conditionInitiale = np.exp(-1/2*((x-x0)**2 + (y-y0)**2)/sigma**2)*np.exp(1j*k*(x-x0))
     return conditionInitiale
-####################################################
+
 
 def buildMatrix(Ni, Nx, Ny, Dy, Dt, v):
     """
@@ -74,10 +74,11 @@ def buildMatrix(Ni, Nx, Ny, Dy, Dt, v):
             A[k, k+1] = -rx
             M[k, k+1] = rx
 
-    return csc_matrix(A), csc_matrix(M)  # Conversion en matrice creuse efficace
+    return csc_matrix(A), csc_matrix(M)
+
 ####################################################
 
-def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0):
+def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
     """
     Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
 
@@ -110,10 +111,20 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0):
         b = M @ psi_vect  # Utilisation directe de l'opérateur sparse
         psi_vect = solve(b)  # Résolution plus rapide
         psi = psi_vect.reshape((Nx-2, Ny-2))
-        mod_psis.append(np.abs(psi))  # Stockage optimisé
+
+        # Calcul de la norme et vérification de la stabilité
+        norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
+        max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
+        print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
+        
+        # Arrêt si la norme explose
+        if norme > 1e10:
+            print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
+            break
+
+        mod_psis.append(np.abs(psi)) 
 
     return mod_psis
-
 
 ################################################################################
 # Ancienne fonctions qui prenaient beaucoup, beaucoup de mémoire et de temps...#
