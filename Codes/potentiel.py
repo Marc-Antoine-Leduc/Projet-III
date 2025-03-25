@@ -37,44 +37,69 @@ def potentiel_periodique(y, a, sigma=1, L=10):
     
     return V_total
 
-def potentielSlits(Dy, Ny, L, k):
-    """
-    Créer deux fentes.
-
-    Args :
-        Dy (float) : Pas en y.
-        Ny (int) : Grandeur du grillage en y. 
-        L (int) : Grandeur de la simulation.
-
-    Returns : 
-        j0, j1, i0, i1, i2, i3 (float) : Dimensions des fentes.
-        v (float) : Potentiel des fentes.
-        w (float) : Largeur du mur.
-    """
-    # Parameters of the double slit.
-    w = 0.6 # Width of the walls of the double slit.
-    s = 0.8 # Separation between the edges of the slits.
-    a = np.pi * 2 /k # Aperture of the slits.
-
-    # Indices that parameterize the double slit in the space of points.
-    # Horizontal axis.
-    j0 = int(1/(2*Dy)*(L-w)) # Left edge.
-    j1 = int(1/(2*Dy)*(L+w)) # Right edge.
-
-    # Eje vertical.
-    i0 = int(1/(2*Dy)*(L+s) + a/Dy) # Lower edge of the lower slit.
-    i1 = int(1/(2*Dy)*(L+s))        # Upper edge of the lower slit.
-    i2 = int(1/(2*Dy)*(L-s))        # Lower edge of the upper slit.
-    i3 = int(1/(2*Dy)*(L-s) - a/Dy) # Upper edge of the upper slit.
-
-    # We generate the potential related to the double slit.
+def potentielSlits(Dy, Ny, L, k, y0):
+    import numpy as np
+    
     v0 = 200
-    v = np.zeros((Ny,Ny), complex) 
-    v[0:i3, j0:j1] = v0
-    v[i2:i1,j0:j1] = v0
-    v[i0:,  j0:j1] = v0
+    w = 0.2       # épaisseur mur
+    s = 0.8       # distance entre centres de fentes
+    a = np.pi * 2 /k        # hauteur totale de chaque fente
+    slit_half = a / 2
+
+    # -- Calcul des indices horizontaux (j0, j1) pour positionner le mur au centre en x --
+    x_center = L / 2
+    j0 = int(round((x_center - w/2)/Dy))
+    j1 = int(round((x_center + w/2)/Dy))
+
+    # -- Calcul des indices verticaux (i0..i3) pour avoir 2 fentes symétriques autour de y0 --
+    lower_slit_center = y0 - s/2
+    upper_slit_center = y0 + s/2
+    
+    i0 = int(round((lower_slit_center - slit_half)/Dy))
+    i1 = int(round((lower_slit_center + slit_half)/Dy))
+    i2 = int(round((upper_slit_center - slit_half)/Dy))
+    i3 = int(round((upper_slit_center + slit_half)/Dy))
+    
+    # -- On s'assure qu'on ne sort pas de la grille [0..Ny-1] --
+    i0 = max(i0, 0)
+    i1 = min(i1, Ny)
+    i2 = max(i2, 0)
+    i3 = min(i3, Ny)
+    
+    v = np.zeros((Ny, Ny), dtype=complex)
+    
+    v[:i0,    j0:j1] = v0
+    v[i1:i2,  j0:j1] = v0
+    v[i3:,    j0:j1] = v0
 
     return j0, j1, i0, i1, i2, i3, v, w
+
+def showPotential(v, L, title="Visualisation du Potentiel"):
+    """
+    Affiche le potentiel v sous forme d'image 2D.
+    
+    Args:
+        v (ndarray): Matrice 2D représentant le potentiel, de taille (Ny, Nx).
+        L (float)  : Longueur du domaine de simulation en x et y.
+        title (str): Titre à afficher sur la figure.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    Ny, Nx = v.shape
+
+    x = np.linspace(0, L, Nx)
+    y = np.linspace(0, L, Ny)
+    
+    plt.figure(figsize=(6, 5))
+    
+    plt.imshow(v.real, extent=[0, L, 0, L], origin='lower', 
+               cmap='hot', aspect='auto')
+    
+    plt.colorbar(label='Potentiel (Re[v])')
+    plt.title(title)
+    plt.xlabel('x')
+    plt.ylabel('y')
 
 
 def potentiel_absorbant(x, y, L, v, d_abs=0.5, strength=100):

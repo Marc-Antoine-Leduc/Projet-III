@@ -102,7 +102,7 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
         # Calcul de la norme et vérification de la stabilité
         norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
         max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
-        print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
+        #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
         
         # Arrêt si la norme explose
         if norme > 1e10:

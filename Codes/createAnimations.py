@@ -37,60 +37,88 @@ def makeBasicAnimation(mod_psis, Nt, L):
     plt.show()
 
     return anim
+
+def makeAnimationForSlits(mod_psis, v, L, Nt):
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    
+    fig, ax = plt.subplots()
+    
+    img_wave = ax.imshow(mod_psis[0]**2, extent=[0,L,0,L], origin='lower',
+                         cmap='hot', vmin=0, vmax=np.max(mod_psis[0]**2))
+    
+    img_pot = ax.imshow(v.real, extent=[0,L,0,L], origin='lower',
+                        cmap='gray', alpha=0.3,  
+                        vmin=0, vmax=np.max(v.real))
+    
+    ax.set_xlim(0, L)
+    ax.set_ylim(0, L)
+    
+    def update(frame):
+        # Met à jour la fonction d’onde
+        wave_sq = mod_psis[frame]**2
+        img_wave.set_data(wave_sq)
+        img_wave.set_clim(vmin=0, vmax=np.max(wave_sq))
+        return (img_wave, img_pot)
+    
+    anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
+    
+    plt.show()
+    return anim
 ####################################################
 
-def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
-    """
-    Créer une animation pour les doubles fentes. 
+# def makeAnimationForSlits(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
+#     """
+#     Créer une animation pour les doubles fentes. 
 
-    Args :
-        mod_psis (array) : Vecteur de fonctions d'onde discrétisées.
-        jo (float) : Extrémité gauche de la simulation.
-        j1 (float) : Extrémité droite de la simulation.
-        i0 (float) : Extrémité basse de la fente la plus basse.
-        i1 (float) : Extrémité haute de la fente la plus basse.
-        i2 (float) : Extrémité basse de la fente la plus haute.
-        i3 (float) : Extrémité haute de la fente la plus haute.
-        Dy (float) : Pas d'espace en y.
-        Nt (int) : Nombre de pas de temps.
-        w (float) : Épaisseur du mur.
-        L (int) : Grandeur du domaine de simulation.
+#     Args :
+#         mod_psis (array) : Vecteur de fonctions d'onde discrétisées.
+#         jo (float) : Extrémité gauche de la simulation.
+#         j1 (float) : Extrémité droite de la simulation.
+#         i0 (float) : Extrémité basse de la fente la plus basse.
+#         i1 (float) : Extrémité haute de la fente la plus basse.
+#         i2 (float) : Extrémité basse de la fente la plus haute.
+#         i3 (float) : Extrémité haute de la fente la plus haute.
+#         Dy (float) : Pas d'espace en y.
+#         Nt (int) : Nombre de pas de temps.
+#         w (float) : Épaisseur du mur.
+#         L (int) : Grandeur du domaine de simulation.
 
-    Returns :
-        anim (plot) : Animation de la fonction d'onde.
-    """
-    fig = plt.figure()
-    ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L))
+#     Returns :
+#         anim (plot) : Animation de la fonction d'onde.
+#     """
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111, xlim=(0,L), ylim=(0,L))
    
-    img = ax.imshow(mod_psis[0]**2, extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, zorder=1)
+#     img = ax.imshow(mod_psis[0]**2, extent=[0,L,0,L], cmap=plt.get_cmap("hot"), vmin=0, zorder=1)
 
-    # Ajout des doubles fentes (murs)
-    slitcolor = "w"
-    slitalpha = 0.08 # Transparance des murs.
-    wall_bottom = Rectangle((j0*Dy,0),     w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
-    wall_middle = Rectangle((j0*Dy,i2*Dy), w, (i1-i2)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)
-    wall_top    = Rectangle((j0*Dy,i0*Dy), w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
+#     # Ajout des doubles fentes (murs)
+#     slitcolor = "w"
+#     slitalpha = 0.08 # Transparance des murs.
+#     wall_bottom = Rectangle((j0*Dy,0),     w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
+#     wall_middle = Rectangle((j0*Dy,i2*Dy), w, (i1-i2)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)
+#     wall_top    = Rectangle((j0*Dy,i0*Dy), w, i3*Dy,      color=slitcolor, zorder=50, alpha=slitalpha)
 
-    ax.add_patch(wall_bottom)
-    ax.add_patch(wall_middle)
-    ax.add_patch(wall_top)
+#     ax.add_patch(wall_bottom)
+#     ax.add_patch(wall_middle)
+#     ax.add_patch(wall_top)
 
-    def animate(i):
-        img.set_data(mod_psis[i]**2)
-        img.set_clim(vmin=0, vmax=np.max(mod_psis[i]**2))  # Échelle dynamique par frame
-        img.set_zorder(1)
-        return img,
+#     def animate(i):
+#         img.set_data(mod_psis[i]**2)
+#         img.set_clim(vmin=0, vmax=np.max(mod_psis[i]**2))  # Échelle dynamique par frame
+#         img.set_zorder(1)
+#         return img,
 
-    anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
+#     anim = FuncAnimation(fig, animate, interval=1, frames=np.arange(0, Nt, 2), repeat=False, blit=False)
 
-    output_dir = r"."
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "doubleSlitsAnimation.mp4")
-    print(f"Enregistrement de l'animation dans : {output_file}")
-    anim.save(output_file, writer="ffmpeg", fps=60)
-    plt.show()
+#     output_dir = r"."
+#     os.makedirs(output_dir, exist_ok=True)
+#     output_file = os.path.join(output_dir, "doubleSlitsAnimation.mp4")
+#     print(f"Enregistrement de l'animation dans : {output_file}")
+#     anim.save(output_file, writer="ffmpeg", fps=60)
+#     plt.show()
 
-    return anim
+#     return anim
 ####################################################
 
 def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
