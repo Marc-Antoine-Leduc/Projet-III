@@ -43,7 +43,7 @@ def potentielSlits(Dy, Ny, L, k, y0):
     v0 = 200
     w = 0.2       # épaisseur mur
     s = 0.8       # distance entre centres de fentes
-    a = np.pi * 2 /k        # hauteur totale de chaque fente
+    a = L /(2*L) # np.pi * 2 /k        # hauteur totale de chaque fente
     slit_half = a / 2
 
     # -- Calcul des indices horizontaux (j0, j1) pour positionner le mur au centre en x --

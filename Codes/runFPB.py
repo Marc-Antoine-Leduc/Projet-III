@@ -5,9 +5,8 @@ from time import time
 import tracemalloc
 
 if __name__ == "__main__":
+
     L = 8 # Grandeur de la simulation (de la boîte).
-    k = 5*np.pi # Nombre d'ondes dans la boîte.
-    #L = np.pi * 2 /k  
     Dy = 0.05 # Pas d'espace.
     Dt = Dy**2/4 # Pas de temps.
     Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
@@ -15,6 +14,12 @@ if __name__ == "__main__":
     Nt = 500 # Nombre de points de temps.
     v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
 
+    ### Nt * Dt = t = L/v_g = L * m / h_bar * k sous le modèle des électrons quasi-libres v_g = h_bar * k /m ###
+
+    h_bar = 1.054571817e-34  # constante de Planck réduite en J.s
+    m = 9.10938356e-31       # masse de l'électron en kg
+
+    k = (L * m) / (h_bar * Nt * Dt)
 
     # Position initial du faisceau d'électrons.
     x0 = L/5
@@ -45,7 +50,7 @@ if __name__ == "__main__":
     
 
     final_psi = diffractionPatron(mod_psis, L, Ny)
-    final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
+    final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy
 
     # print(f"Probabilité totale initiale : {initial_norm}")
     # print(f"Probabilité totale finale : {final_norm}")

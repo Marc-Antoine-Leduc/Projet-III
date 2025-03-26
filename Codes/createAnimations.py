@@ -176,32 +176,40 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
 
 def diffractionPatron(mod_psis, L, Ny):
     """
-    Crée une figure montrant le patron de diffraction de la densité de probabilité.
+    Crée une figure montrant le patron de diffraction de la densité de probabilité cumulative.
 
-    Args :
-        mod_psis (array) : Vecteur de fonctions d'onde discrétisées.
-        L (int) : Longueur du domaine. 
-        Ny (int) : Grandeur du grillage en y.
-    
-    Returns :
-        final_psi (array) : Norme de la fonction d'onde sur l'écran.
+    Args:
+        mod_psis (list of arrays): Liste des modules de la fonction d'onde discrétisée à chaque pas de temps.
+        L (float): Longueur du domaine.
+        Ny (int): Nombre de points dans la direction y du domaine.
+
+    Returns:
+        cumulative_intensity (array): Intensité cumulative (somme sur le temps) sur l'écran (à x = L).
     """
-    final_psi = mod_psis[-1]  # Dernière étape temporelle
-    screen_intensity = np.abs(final_psi[:, -1])**2  # Intensité (|psi|^2) sur le bord droit
-    y_screen = np.linspace(0, L, Ny-2)  # Coordonnées y le long de l’écran
+    import numpy as np
+    import matplotlib.pyplot as plt
 
-    # Affichage du patron de diffraction
+
+    cumulative_intensity = np.zeros(mod_psis[0].shape[0])
+    
+    # Somme cumulative de l'intensité sur l'écran à chaque instant
+    for psi in mod_psis:
+        cumulative_intensity += np.abs(psi[:, -1])**2
+
+    y_screen = np.linspace(0, L, mod_psis[0].shape[0])
+    
     plt.figure(figsize=(8, 6))
-    plt.plot(y_screen, screen_intensity, label='Patron de diffraction')
+    plt.plot(y_screen, cumulative_intensity, label='Patron de diffraction cumulé')
     plt.xlabel('Position y')
-    plt.ylabel('Intensité (|ψ|^2)')
-    plt.title('Patron de diffraction sur l’écran à x = L')
+    plt.ylabel('Intensité cumulative (|ψ|²)')
+    plt.title("Patron de diffraction cumulé sur l'écran à x = L")
     plt.grid(True)
     plt.legend()
-
     plt.show()
 
-    return final_psi
+    return cumulative_intensity
+
+
 ####################################################
 
 # def saveData(mod_psis):
