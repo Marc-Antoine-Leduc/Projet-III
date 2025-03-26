@@ -6,13 +6,15 @@ import tracemalloc
 
 if __name__ == "__main__":
     L = 8 # Grandeur de la simulation (de la boîte).
+    k = 5*np.pi # Nombre d'ondes dans la boîte.
+    #L = np.pi * 2 /k  
     Dy = 0.05 # Pas d'espace.
     Dt = Dy**2/4 # Pas de temps.
     Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
     Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
     Nt = 500 # Nombre de points de temps.
     v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
-    k = 5*np.pi # Nombre d'ondes dans la boîte.
+
 
     # Position initial du faisceau d'électrons.
     x0 = L/5
@@ -27,6 +29,8 @@ if __name__ == "__main__":
     
     mat_t = time()
     A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
+    mem_ar = 8 * M.nnz + 8 * A.nnz
+    print(f"Mémoire utilisée pour les matrices : {mem_ar/10**6:.2f} Mo")
     mat_t = time() - mat_t
     print(f'Temps d\'exécution de création de la matrice: : {mat_t*1000:.2f} ms')
     
