@@ -62,8 +62,14 @@ def makeAnimationForSlits(mod_psis, v, L, Nt):
         return (img_wave, img_pot)
     
     anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
-    
+
+    output_dir = r"."
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "basicAnimation.mp4")
+    print(f"Enregistrement de l'animation dans : {output_file}")
+    anim.save(output_file, writer="ffmpeg", fps=60)
     plt.show()
+    
     return anim
 ####################################################
 
@@ -198,8 +204,16 @@ def diffractionPatron(mod_psis, L, Ny):
 
     y_screen = np.linspace(0, L, mod_psis[0].shape[0])
     
+    # patron = int((2.8*len(mod_psis))/3)
+    final_psi = mod_psis[-1]  # Dernière étape temporelle
+    screen_intensity = np.abs(final_psi[:, -1])**2  # Intensité (|psi|^2) sur le bord droit
+    y_screen = np.linspace(0, L, Ny-2)  # Coordonnées y le long de l’écran
+
+    # Affichage du patron de diffraction
     plt.figure(figsize=(8, 6))
     plt.plot(y_screen, cumulative_intensity, label='Patron de diffraction cumulé')
+    plt.plot(y_screen, screen_intensity, label="Patron de diffraction simulé")
+    plt.plot(y_screen, theoreticalIntensity(np.linspace(-L/2, L/2, Ny-2), s=0.8, a=0.2, L=L, k=5*np.pi), label="Patron de diffraction théorique", linestyle="dashed")
     plt.xlabel('Position y')
     plt.ylabel('Intensité cumulative (|ψ|²)')
     plt.title("Patron de diffraction cumulé sur l'écran à x = L")
@@ -210,6 +224,46 @@ def diffractionPatron(mod_psis, L, Ny):
     return cumulative_intensity
 
 
+####################################################
+
+def theoreticalIntensity(y, s, a, L, k):
+    """
+    Fonction théorique pour le patron de diffraction des fentes de Young.
+
+    Args :
+        y (array) : Plage de valeurs.
+        s (float) : Distance entre les fentes.
+        a (float) : Largeur des fentes.
+        L (int) : Longueur du domaine.
+        k (float) : Vecteur d'onde.
+    
+    Returns :
+        (cos_term**2) * (sinc_term**2) (array) : Fonction théorique.
+    """
+    lambda_ = 2*np.pi / k
+    sinc_term = np.sinc((np.pi * a * y) / (lambda_ * L))
+    cos_term = np.cos((np.pi * s * y) / (lambda_ * L))
+    return (cos_term**2) * (sinc_term**2) 
+####################################################
+
+def theoreticalIntensity(y, s, a, L, k):
+    """
+    Fonction théorique pour le patron de diffraction des fentes de Young.
+
+    Args :
+        y (array) : Plage de valeurs.
+        s (float) : Distance entre les fentes.
+        a (float) : Largeur des fentes.
+        L (int) : Longueur du domaine.
+        k (float) : Vecteur d'onde.
+    
+    Returns :
+        (cos_term**2) * (sinc_term**2) (array) : Fonction théorique.
+    """
+    lambda_ = 2*np.pi / k
+    sinc_term = np.sinc((np.pi * a * y) / (lambda_ * L))
+    cos_term = np.cos((np.pi * s * y) / (lambda_ * L))
+    return (cos_term**2) * (sinc_term**2) 
 ####################################################
 
 # def saveData(mod_psis):
