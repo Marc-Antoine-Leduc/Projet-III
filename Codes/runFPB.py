@@ -1,6 +1,8 @@
 from potentiel import *
 from doubleSlit_FPB_CN import *
 from createAnimations import *
+from time import time
+import tracemalloc
 
 if __name__ == "__main__":
     L = 8 # Grandeur de la simulation (de la boîte).
@@ -23,9 +25,20 @@ if __name__ == "__main__":
     # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
     # v += v_abs
     
-
+    mat_t = time()
     A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
+    mat_t = time() - mat_t
+    print(f'Temps d\'exécution de création de la matrice: : {mat_t*1000:.2f} ms')
+    
+    tracemalloc.start()
+    solvemat_t = time()
     mod_psis, initial_norm = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
+    solvemat_t = time() - solvemat_t
+    print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Utilisation actuelle : {current / 10**6} Mo; Pic : {peak / 10**6} Mo")
+    tracemalloc.stop()
+    
 
     final_psi = diffractionPatron(mod_psis, L, Ny)
     final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
