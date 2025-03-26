@@ -57,4 +57,3 @@ if __name__ == "__main__":
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
     animation = makeAnimationForSlits(mod_psis, v, L, Nt)
-

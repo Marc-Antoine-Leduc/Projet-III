@@ -90,7 +90,6 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
     psi = psi0(x, y, x0, y0)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
     mod_psis = [np.abs(psi)]  # Stocker directement le module
-    normes = [np.sum(np.abs(psi)**2) * Dy * Dy]
 
     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
 
@@ -102,10 +101,6 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
         # Calcul de la norme et vérification de la stabilité
         norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
-        normes.append(norme)  
-        if abs(norme - 1) > 0.05:  # Tolérance de 5%
-            print(f"Alerte : Conservation de la norme non respectée à l'étape {i}, norme = {norme}")
-
         max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
         #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
         
@@ -116,7 +111,7 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
         mod_psis.append(np.abs(psi)) 
 
-    return mod_psis, initial_norm, normes
+    return mod_psis, initial_norm
 
 ################################################################################
 # Ancienne fonctions qui prenaient beaucoup, beaucoup de mémoire et de temps...#
@@ -231,3 +226,22 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 #     # del psi
 
 #     return mod_psis
+
+def theoreticalIntensity(y, s, a, L, k):
+     """
+     Fonction théorique pour le patron de diffraction des fentes de Young.
+ 
+     Args :
+         y (array) : Plage de valeurs.
+         s (float) : Distance entre les fentes.
+         a (float) : Largeur des fentes.
+         L (int) : Longueur du domaine.
+         k (float) : Vecteur d'onde.
+     
+     Returns :
+         (cos_term**2) * (sinc_term**2) (array) : Fonction théorique.
+     """
+     lambda_ = 2*np.pi / k
+     sinc_term = np.sinc((np.pi * a * y) / (lambda_ * L))
+     cos_term = np.cos((np.pi * s * y) / (lambda_ * L))
+     return (cos_term**2) * (sinc_term**2) 
