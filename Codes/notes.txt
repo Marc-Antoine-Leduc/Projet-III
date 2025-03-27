@@ -1,0 +1,2 @@
+Checker si le carré de psi carré est calculé à la bonne étape
+Ajouter dimension spatiale
