@@ -6,7 +6,7 @@ import tracemalloc
 
 if __name__ == "__main__":
 
-    L = 8 # Grandeur de la simulation (de la boîte).
+    L = 10 # Grandeur de la simulation (de la boîte).
     Dy = 0.05 # Pas d'espace.
     Dt = Dy**2/4 # Pas de temps.
     Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     v_g = h_bar * k / m
 
     # Position initial du faisceau d'électrons.
-    x0 = L/8
+    x0 = L/5
     y0 = L/2
 
     t_arrival = (L - x0) / v_g
@@ -55,12 +55,19 @@ if __name__ == "__main__":
     print(f"Utilisation actuelle : {current / 10**6} Mo; Pic : {peak / 10**6} Mo")
     tracemalloc.stop()
     
+    n0 = len(mod_psis) // 2
+    extract_frac = 0.75
 
-    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, n0)
-    final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy
+    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, n0, extract_frac)
+    final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy   
+    
+    print(f"Norme finale : {final_norm}")
+
+    #Verification de la norme.
+    # assert 0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05
 
     # print(f"Probabilité totale initiale : {initial_norm}")
     # print(f"Probabilité totale finale : {final_norm}")
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    animation = makeAnimationForSlits(mod_psis, v, L, Nt)
+    animation = makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac)

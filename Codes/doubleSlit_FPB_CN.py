@@ -7,7 +7,7 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse.linalg import factorized
 from scipy.sparse import lil_matrix, diags
 
-def psi0(x, y, x0, y0, sigma=0.5, k=15*np.pi):
+def psi0(x, y, x0, y0, sigma=1, k=15*np.pi):
     N = 1 / (sigma * np.sqrt(np.pi))  # Facteur de normalisation
     conditionInitiale = N * np.exp(-1/2*((x-x0)**2 + (y-y0)**2)/sigma**2) * np.exp(1j*k*(x-x0))
     return conditionInitiale

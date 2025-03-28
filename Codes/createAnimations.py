@@ -38,24 +38,29 @@ def makeBasicAnimation(mod_psis, Nt, L):
 
     return anim
 
-def makeAnimationForSlits(mod_psis, v, L, Nt):
+def makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac=0.75):
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
-    
+    import os
+
     fig, ax = plt.subplots()
     
-    img_wave = ax.imshow(mod_psis[0]**2, extent=[0,L,0,L], origin='lower',
+    img_wave = ax.imshow(mod_psis[0]**2, extent=[0, L, 0, L], origin='lower',
                          cmap='hot', vmin=0, vmax=np.max(mod_psis[0]**2))
     
-    img_pot = ax.imshow(v.real, extent=[0,L,0,L], origin='lower',
+    img_pot = ax.imshow(v.real, extent=[0, L, 0, L], origin='lower',
                         cmap='gray', alpha=0.3,  
                         vmin=0, vmax=np.max(v.real))
     
+    # Déterminer la position x_extract et tracer une ligne verticale
+    x_extract = extract_frac * L
+    ax.axvline(x=x_extract, color='cyan', linestyle='--', linewidth=2, label='Patron extrait')
+    
     ax.set_xlim(0, L)
     ax.set_ylim(0, L)
-    
+    ax.legend()
+
     def update(frame):
-        # Met à jour la fonction d’onde
         wave_sq = mod_psis[frame]**2
         img_wave.set_data(wave_sq)
         img_wave.set_clim(vmin=0, vmax=np.max(wave_sq))
@@ -64,6 +69,13 @@ def makeAnimationForSlits(mod_psis, v, L, Nt):
     anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
     
     plt.show()
+    
+    output_dir = "."
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "basicAnimation.mp4")
+    print(f"Enregistrement de l'animation dans : {output_file}")
+    anim.save(output_file, writer="ffmpeg", fps=60)
+
     return anim
 ####################################################
 
@@ -174,11 +186,10 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     return anim
 ####################################################
 
-def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0):
+def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0, extract_frac=0.75):
     """
-    Affiche le patron de diffraction cumulé sur l'écran à x = L,
-    en ne prenant en compte que les instants après t_arrivée (n0),
-    et superpose le patron théorique.
+    Affiche le patron de diffraction cumulé sur l'écran à x = extract_frac * L,
+    en ne prenant en compte que les instants après n0, et superpose le patron théorique.
 
     Args:
         mod_psis (list of arrays): Liste des modules de la fonction d'onde à chaque pas de temps.
@@ -188,21 +199,30 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0):
         a (float): Largeur effective des fentes (défini dans potentiel.py).
         k (float): Vecteur d'onde.
         n0 (int, optionnel): Indice de temps à partir duquel commencer le cumul.
+        extract_frac (float, optionnel): Fraction de L pour l'extraction (ex. 0.75).
     
     Returns:
-        cumulative_intensity (array): Intensité cumulative sur l'écran (à x = L) après n0.
+        cumulative_intensity (array): Intensité cumulative sur l'écran (à x = extract_frac * L) après n0.
     """
     import numpy as np
     import matplotlib.pyplot as plt
     from doubleSlit_FPB_CN import theoreticalIntensity
 
+    # Maillage spatial sur [0, L]
     y_screen = np.linspace(0, L, mod_psis[0].shape[0])
     
-    # Cumul de l'intensité sur l'écran uniquement pour les instants postérieurs à n0
+    # Déterminer l'indice de la colonne correspondant à x = extract_frac * L.
+    j_extract = int(extract_frac * mod_psis[0].shape[1])
+    
+    # Cumul de l'intensité sur la colonne d'extraction, à partir de n0
     cumulative_intensity = np.zeros(mod_psis[0].shape[0])
-    for psi in mod_psis[n0:]:
-        cumulative_intensity += np.abs(psi[:, -1])**2
 
+    # n1 = len(mod_psis) * 0.75 à penser pour pas considérer réflections à droite
+
+    for psi in mod_psis[n0:]:
+        cumulative_intensity += np.abs(psi[:, j_extract])**2
+
+    # Pour le patron théorique, on centre la coordonnée y autour de L/2
     y_centered = y_screen - L/2
 
     theo_intensity = theoreticalIntensity(y_centered, s, a, L, k)
@@ -210,12 +230,12 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0):
     max_sim  = np.max(cumulative_intensity)
     max_theo = np.max(theo_intensity)
     if max_theo == 0:
-        max_theo = 1e-15  # évite la division par zéro
+        max_theo = 1e-15  # éviter division par zéro
     theo_intensity_norm = theo_intensity * (max_sim / max_theo)
 
     plt.figure(figsize=(8, 6))
     plt.plot(y_screen, cumulative_intensity, label='Patron simulé')
-    plt.plot(y_screen, theo_intensity_norm, 'k--', label='Patron théorique ')
+    plt.plot(y_screen, theo_intensity_norm, 'k--', label='Patron théorique')
     plt.xlabel('Position y')
     plt.ylabel('Intensité cumulative (|ψ|²)')
     plt.title("Comparaison du patron de diffraction simulé et théorique")
