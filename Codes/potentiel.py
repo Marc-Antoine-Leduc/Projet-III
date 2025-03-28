@@ -72,7 +72,7 @@ def potentielSlits(Dy, Ny, L, k, y0):
     v[i1:i2,  j0:j1] = v0
     v[i3:,    j0:j1] = v0
 
-    return j0, j1, i0, i1, i2, i3, v, w
+    return j0, j1, i0, i1, i2, i3, v, w, s, a
 
 def showPotential(v, L, title="Visualisation du Potentiel"):
     """

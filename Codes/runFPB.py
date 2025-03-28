@@ -21,13 +21,20 @@ if __name__ == "__main__":
 
     k = (L * m) / (h_bar * Nt * Dt)
 
+    v_g = h_bar * k / m
+
     # Position initial du faisceau d'électrons.
-    x0 = L/5
+    x0 = L/8
     y0 = L/2
+
+    t_arrival = (L - x0) / v_g
+
+    n0 = int(t_arrival / Dt)
+
         
     Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
 
-    j0, j1, i0, i1, i2, i3, v, w = potentielSlits(Dy, Ny, L, k, y0)
+    j0, j1, i0, i1, i2, i3, v, w, s, a = potentielSlits(Dy, Ny, L, k, y0)
 
     # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
     # v += v_abs
@@ -49,7 +56,7 @@ if __name__ == "__main__":
     tracemalloc.stop()
     
 
-    final_psi = diffractionPatron(mod_psis, L, Ny)
+    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, n0)
     final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy
 
     # print(f"Probabilité totale initiale : {initial_norm}")

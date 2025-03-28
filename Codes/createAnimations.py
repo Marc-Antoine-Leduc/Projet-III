@@ -174,40 +174,57 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     return anim
 ####################################################
 
-def diffractionPatron(mod_psis, L, Ny):
+def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0):
     """
-    Crée une figure montrant le patron de diffraction de la densité de probabilité cumulative.
+    Affiche le patron de diffraction cumulé sur l'écran à x = L,
+    en ne prenant en compte que les instants après t_arrivée (n0),
+    et superpose le patron théorique.
 
     Args:
-        mod_psis (list of arrays): Liste des modules de la fonction d'onde discrétisée à chaque pas de temps.
+        mod_psis (list of arrays): Liste des modules de la fonction d'onde à chaque pas de temps.
         L (float): Longueur du domaine.
-        Ny (int): Nombre de points dans la direction y du domaine.
-
+        Ny (int): Nombre de points dans la direction y.
+        s (float): Distance entre les fentes (défini dans potentiel.py).
+        a (float): Largeur effective des fentes (défini dans potentiel.py).
+        k (float): Vecteur d'onde.
+        n0 (int, optionnel): Indice de temps à partir duquel commencer le cumul.
+    
     Returns:
-        cumulative_intensity (array): Intensité cumulative (somme sur le temps) sur l'écran (à x = L).
+        cumulative_intensity (array): Intensité cumulative sur l'écran (à x = L) après n0.
     """
     import numpy as np
     import matplotlib.pyplot as plt
-
-
-    cumulative_intensity = np.zeros(mod_psis[0].shape[0])
-    
-    # Somme cumulative de l'intensité sur l'écran à chaque instant
-    for psi in mod_psis:
-        cumulative_intensity += np.abs(psi[:, -1])**2
+    from doubleSlit_FPB_CN import theoreticalIntensity
 
     y_screen = np.linspace(0, L, mod_psis[0].shape[0])
     
+    # Cumul de l'intensité sur l'écran uniquement pour les instants postérieurs à n0
+    cumulative_intensity = np.zeros(mod_psis[0].shape[0])
+    for psi in mod_psis[n0:]:
+        cumulative_intensity += np.abs(psi[:, -1])**2
+
+    y_centered = y_screen - L/2
+
+    theo_intensity = theoreticalIntensity(y_centered, s, a, L, k)
+
+    max_sim  = np.max(cumulative_intensity)
+    max_theo = np.max(theo_intensity)
+    if max_theo == 0:
+        max_theo = 1e-15  # évite la division par zéro
+    theo_intensity_norm = theo_intensity * (max_sim / max_theo)
+
     plt.figure(figsize=(8, 6))
-    plt.plot(y_screen, cumulative_intensity, label='Patron de diffraction cumulé')
+    plt.plot(y_screen, cumulative_intensity, label='Patron simulé')
+    plt.plot(y_screen, theo_intensity_norm, 'k--', label='Patron théorique ')
     plt.xlabel('Position y')
     plt.ylabel('Intensité cumulative (|ψ|²)')
-    plt.title("Patron de diffraction cumulé sur l'écran à x = L")
+    plt.title("Comparaison du patron de diffraction simulé et théorique")
     plt.grid(True)
     plt.legend()
     plt.show()
 
     return cumulative_intensity
+
 
 
 ####################################################
