@@ -89,9 +89,11 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
     
     psi = psi0(x, y, x0, y0)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
-    mod_psis = [np.abs(psi)]  # Stocker directement le module
+    mod_psis = [np.abs(psi)]  
+    norms = []
 
     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
+    norms.append(initial_norm)
 
     for i in range(1, Nt):
         psi_vect = psi.reshape(Ni)
@@ -101,6 +103,7 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
         # Calcul de la norme et vérification de la stabilité
         norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
+        norms.append(norme)
         max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
         #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
         
@@ -111,7 +114,7 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
         mod_psis.append(np.abs(psi)) 
 
-    return mod_psis, initial_norm
+    return mod_psis, initial_norm, norms
 
 ################################################################################
 # Ancienne fonctions qui prenaient beaucoup, beaucoup de mémoire et de temps...#
@@ -227,21 +230,23 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
 #     return mod_psis
 
-def theoreticalIntensity(y, s, a, L, k):
-     """
-     Fonction théorique pour le patron de diffraction des fentes de Young.
+def theoreticalIntensity(y, s, a, L, k, I_0=1.0):
+    """
+    Fonction théorique pour le patron de diffraction des fentes de Young.
  
-     Args :
-         y (array) : Plage de valeurs.
-         s (float) : Distance entre les fentes.
-         a (float) : Largeur des fentes.
-         L (int) : Longueur du domaine.
-         k (float) : Vecteur d'onde.
+    Args :
+        y (array) : Plage de valeurs centrées autour de L/2.
+        s (float) : Distance entre les centres des fentes.
+        a (float) : Largeur de chaque fente.
+        L (float) : Distance fentes-écran.
+        k (float) : Vecteur d'onde.
+        I_0 (float) : Intensité maximale (par défaut 1.0).
      
-     Returns :
-         (cos_term**2) * (sinc_term**2) (array) : Fonction théorique.
-     """
-     lambda_ = 2*np.pi / k
-     sinc_term = np.sinc((np.pi * a * y) / (lambda_ * L))
-     cos_term = np.cos((np.pi * s * y) / (lambda_ * L))
-     return (cos_term**2) * (sinc_term**2) 
+    Returns :
+        Intensité théorique.
+    """
+    lambda_ = 2 * np.pi / k
+    
+    sinc_term = np.sinc((a * y) / (lambda_ * L))  # np.sinc inclut déjà pi
+    cos_term = np.cos((np.pi * s * y) / (lambda_ * L))
+    return I_0 * (cos_term**2) * (sinc_term**2)

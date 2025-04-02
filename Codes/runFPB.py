@@ -48,7 +48,7 @@ if __name__ == "__main__":
     
     tracemalloc.start()
     solvemat_t = time()
-    mod_psis, initial_norm = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
+    mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
     solvemat_t = time() - solvemat_t
     print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
     current, peak = tracemalloc.get_traced_memory()
@@ -68,6 +68,20 @@ if __name__ == "__main__":
 
     # print(f"Probabilité totale initiale : {initial_norm}")
     # print(f"Probabilité totale finale : {final_norm}")
+
+    plt.figure(figsize=(10, 6))
+    time_steps = np.arange(len(norms)) * Dt 
+    plt.plot(time_steps, norms, label='Norme de ψ')
+    plt.axhline(y=1.0, color='r', linestyle='--', label='Norme théorique (1)')
+    plt.xlabel('Temps (s)')
+    plt.ylabel('Norme (|ψ|² intégré)')
+    plt.title('Évolution de la norme de la fonction d\'onde')
+    plt.ylim(0.5, plt.ylim()[1]) 
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
     animation = makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac)
+
