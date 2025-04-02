@@ -230,23 +230,23 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
 #     return mod_psis
 
-def theoreticalIntensity(y, s, a, L, k, I_0=1.0):
+def theoreticalIntensity(y, s, a, D, k, I_0=1):
     """
-    Fonction théorique pour le patron de diffraction des fentes de Young.
- 
-    Args :
-        y (array) : Plage de valeurs centrées autour de L/2.
-        s (float) : Distance entre les centres des fentes.
-        a (float) : Largeur de chaque fente.
-        L (float) : Distance fentes-écran.
+    Calcule le patron théorique de diffraction en prenant en compte la distance D
+    entre les fentes et l'écran d'observation.
+
+    Args:
+        y (array) : Coordonnées verticales sur l'écran, centrées autour de 0.
+        s (float) : Distance entre les fentes.
+        a (float) : Largeur effective des fentes.
+        D (float) : Distance entre le plan des fentes et l'écran.
         k (float) : Vecteur d'onde.
-        I_0 (float) : Intensité maximale (par défaut 1.0).
-     
-    Returns :
-        Intensité théorique.
+
+    Returns:
+        array : Intensité théorique.
     """
     lambda_ = 2 * np.pi / k
     
-    sinc_term = np.sinc((a * y) / (lambda_ * L))  # np.sinc inclut déjà pi
-    cos_term = np.cos((np.pi * s * y) / (lambda_ * L))
+    sinc_term = np.sinc((a * y) / (lambda_ * D))  # np.sinc inclut déjà pi
+    cos_term = np.cos((np.pi * s * y) / (lambda_ * D))
     return I_0 * (cos_term**2) * (sinc_term**2)

@@ -6,12 +6,12 @@ import tracemalloc
 
 if __name__ == "__main__":
 
-    L = 10 # Grandeur de la simulation (de la boîte).
+    L = 20 # Grandeur de la simulation (de la boîte).
     Dy = 0.05 # Pas d'espace.
     Dt = Dy**2/4 # Pas de temps.
     Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
     Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
-    Nt = 500 # Nombre de points de temps.
+    Nt = 1000 # Nombre de points de temps.
     v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
 
     ### Nt * Dt = t = L/v_g = L * m / h_bar * k sous le modèle des électrons quasi-libres v_g = h_bar * k /m ###
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     h_bar = 1.054571817e-34  # constante de Planck réduite en J.s
     m = 9.10938356e-31       # masse de l'électron en kg
 
-    k = (L * m) / (h_bar * Nt * Dt)
+    k = 15*np.pi # (L * m) / (h_bar * Nt * Dt)
 
     v_g = h_bar * k / m
 
@@ -57,8 +57,10 @@ if __name__ == "__main__":
     
     n0 = len(mod_psis) // 2
     extract_frac = 0.75
+    x_extract = extract_frac * L
+    D = abs(x_extract - L/2)
 
-    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, n0, extract_frac)
+    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0, extract_frac)
     final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy   
     
     print(f"Norme finale : {final_norm}")

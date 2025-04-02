@@ -47,7 +47,7 @@ def potentielSlits(Dy, Ny, L, k, y0):
     slit_half = a / 2
 
     # -- Calcul des indices horizontaux (j0, j1) pour positionner le mur au centre en x --
-    x_center = L / 2
+    x_center = L / 3
     j0 = int(round((x_center - w/2)/Dy))
     j1 = int(round((x_center + w/2)/Dy))
 

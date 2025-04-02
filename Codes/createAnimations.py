@@ -54,6 +54,7 @@ def makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac=0.75):
     
     # Déterminer la position x_extract et tracer une ligne verticale
     x_extract = extract_frac * L
+    D = abs(x_extract - L/2)
     ax.axvline(x=x_extract, color='cyan', linestyle='--', linewidth=2, label='Patron extrait')
     
     ax.set_xlim(0, L)
@@ -186,7 +187,7 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     return anim
 ####################################################
 
-def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0, extract_frac=0.75):
+def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
     """
     Affiche le patron de diffraction cumulé sur l'écran à x = extract_frac * L,
     en ne prenant en compte que les instants après n0, et superpose le patron théorique.
@@ -225,7 +226,7 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, n0=0, extract_frac=0.75):
     # Pour le patron théorique, on centre la coordonnée y autour de L/2
     y_centered = y_screen - L/2
 
-    theo_intensity = theoreticalIntensity(y_centered, s, a, L, k)
+    theo_intensity = theoreticalIntensity(y_centered, s, a, D, k)
 
     max_sim  = np.max(cumulative_intensity)
     max_theo = np.max(theo_intensity)
