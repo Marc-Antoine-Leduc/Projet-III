@@ -247,6 +247,6 @@ def theoreticalIntensity(y, s, a, D, k, I_0=1):
     """
     lambda_ = 2 * np.pi / k
     
-    sinc_term = np.sinc((a * y) / (lambda_ * D))  # np.sinc inclut déjà pi
+    sinc_term = np.sinc((np.pi *a * y) / (lambda_ * D))  # np.sinc inclut déjà pi
     cos_term = np.cos((np.pi * s * y) / (lambda_ * D))
     return I_0 * (cos_term**2) * (sinc_term**2)
