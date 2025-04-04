@@ -135,6 +135,80 @@ def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     return anim
 ####################################################
 
+def fit(y_screen, cumulative_intensity, s, a_initial, k, D, L):
+    """
+    Effectue un curve fitting pour extraire la largeur des fentes (a) à partir du patron de diffraction simulé.
+
+    Args:
+        y_screen (array): Coordonnées y sur l'écran (de 0 à L).
+        cumulative_intensity (array): Intensité cumulée simulée (|ψ|²).
+        s (float): Distance entre les fentes (définie dans potentiel.py).
+        a_initial (float): Estimation initiale de la largeur des fentes (pour l'optimisation).
+        k (float): Vecteur d'onde.
+        D (float): Distance entre le plan des fentes et l'écran.
+        L (float): Longueur du domaine de simulation.
+
+    Returns:
+        a_fit (float): Largeur des fentes ajustée.
+        I_0_fit (float): Facteur d'échelle de l'intensité ajusté.
+    """
+    from scipy.optimize import curve_fit
+
+    # Définir la fonction à ajuster
+    def intensity_to_fit(y, a, I_0):
+        """
+        Fonction d'intensité théorique avec a et I_0 comme paramètres à ajuster.
+        """
+        y_centered = y - L/2  # Centrer les coordonnées y autour de L/2
+        return theoreticalIntensity(y_centered, s, a, D, k, I_0=I_0)
+
+    # Normaliser l'intensité simulée pour faciliter l'ajustement
+    max_sim = np.max(cumulative_intensity)
+    if max_sim == 0:
+        max_sim = 1e-15  # Éviter division par zéro
+    normalized_intensity = cumulative_intensity / max_sim
+
+    # Estimation initiale des paramètres [a, I_0]
+    p0 = [a_initial, 1.0]  # a_initial est la valeur théorique, I_0 initial = 1
+
+    try:
+        popt, pcov = curve_fit(intensity_to_fit, y_screen, normalized_intensity, p0=p0, bounds=([0, 0], [np.inf, np.inf]))
+        a_fit, I_0_fit = popt
+        perr = np.sqrt(np.diag(pcov))  # Erreur standard sur les paramètres
+        a_err, I_0_err = perr
+    except RuntimeError as e:
+        print(f"Erreur lors de l'ajustement : {e}")
+        a_fit, I_0_fit = a_initial, 1.0
+        a_err, I_0_err = 0, 0
+
+    # Calculer les patrons pour comparaison
+    y_centered = y_screen - L/2
+    theo_intensity_initial = theoreticalIntensity(y_centered, s, a_initial, D, k, I_0=1.0)
+    theo_intensity_fit = theoreticalIntensity(y_centered, s, a_fit, D, k, I_0=I_0_fit)
+
+    # Renormaliser pour le tracé
+    theo_intensity_initial = theo_intensity_initial * max_sim
+    theo_intensity_fit = theo_intensity_fit * max_sim
+
+    # Afficher les résultats
+    print(f"Largeur des fentes ajustée (a) : {a_fit:.4f} ± {a_err:.4f}")
+    print(f"Largeur des fentes théorique (a) : {a_initial:.4f}")
+    print(f"Facteur d'échelle ajusté (I_0) : {I_0_fit:.4f} ± {I_0_err:.4f}")
+
+    # Tracé
+    plt.figure(figsize=(10, 6))
+    plt.plot(y_screen, cumulative_intensity, label='Patron simulé', color='blue')
+    plt.plot(y_screen, theo_intensity_initial, 'k--', label='Patron théorique initial', alpha=0.7)
+    plt.plot(y_screen, theo_intensity_fit, 'r-', label='Patron ajusté', alpha=0.7)
+    plt.xlabel('Position y')
+    plt.ylabel('Intensité cumulative (|ψ|²)')
+    plt.title("Ajustement du patron de diffraction pour extraire la largeur des fentes")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    return a_fit, I_0_fit
+
 def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
     """
     Affiche le patron de diffraction cumulé sur l'écran à x = extract_frac * L,
@@ -222,6 +296,8 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
     plt.grid(True)
     plt.legend()
     plt.show()
+
+    a_fit, I_0_fit = fit(y_screen, cumulative_intensity, s, a, k, D, L)
 
     return cumulative_intensity
 
