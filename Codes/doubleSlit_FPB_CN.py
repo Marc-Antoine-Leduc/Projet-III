@@ -118,21 +118,33 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
 
 def theoreticalIntensity(y, s, a, D, k, I_0=1):
     """
-    Calcule le patron théorique de diffraction en prenant en compte la distance D
-    entre les fentes et l'écran d'observation.
+    Calcule le patron théorique de diffraction en utilisant sin(theta) pour l'angle relatif.
 
     Args:
-        y (array) : Coordonnées verticales sur l'écran, centrées autour de 0.
-        s (float) : Distance entre les fentes.
-        a (float) : Largeur effective des fentes.
-        D (float) : Distance entre le plan des fentes et l'écran.
-        k (float) : Vecteur d'onde.
+        y (array): Coordonnées verticales sur l'écran, centrées autour de L/2.
+        s (float): Distance entre les fentes.
+        a (float): Largeur effective des fentes.
+        D (float): Distance entre le plan des fentes et l'écran.
+        k (float): Vecteur d'onde.
+        I_0 (float): Intensité maximale (défaut = 1).
 
     Returns:
-        array : Intensité théorique.
+        array: Intensité théorique.
     """
+
     lambda_ = 2 * np.pi / k
     
-    sinc_term = np.sinc((np.pi *a * y) / (lambda_ * D))  # np.sinc inclut déjà pi
-    cos_term = np.cos((np.pi * s * y) / (lambda_ * D))
+
+    y_centered = y 
+
+    # tanθ= (y−L/2)/D
+
+    sin_theta = y_centered / np.sqrt(y_centered**2 + D**2)
+    
+    # Terme de diffraction (enveloppe)
+    sinc_term = np.sinc((np.pi * a * sin_theta) / lambda_)  # np.sinc inclut déjà pi
+    
+    # Terme d'interférence
+    cos_term = np.cos((np.pi * s * sin_theta) / lambda_)
+    
     return I_0 * (cos_term**2) * (sinc_term**2)
