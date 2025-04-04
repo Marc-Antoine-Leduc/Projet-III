@@ -6,63 +6,84 @@ import tracemalloc
 
 if __name__ == "__main__":
 
-    L = 20 # Grandeur de la simulation (de la boîte).
-    Dy = 0.05 # Pas d'espace.
-    Dt = Dy**2/4 # Pas de temps.
-    Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
-    Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
-    Nt = 1000 # Nombre de points de temps.
-    v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
+    fact_ar = np.array([0.05], dtype=np.double); # Matrice pleine
+    mem_ar=np.zeros(fact_ar.size,dtype=np.double)
+    d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
-    ### Nt * Dt = t = L/v_g = L * m / h_bar * k sous le modèle des électrons quasi-libres v_g = h_bar * k /m ###
+    ci = -1
+    for fact in fact_ar:
+        ci += 1
+        print(f"Pas de discrétisation : dx=dy={fact}")
+        d_ar[ci] = fact
 
-    h_bar = 1.054571817e-34  # constante de Planck réduite en J.s
-    m = 9.10938356e-31       # masse de l'électron en kg
+        L = 20 # Grandeur de la simulation (de la boîte).
+        Dy = fact # Pas d'espace.
+        Dt = Dy**2/4 # Pas de temps.
+        Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
+        Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
+        Nt = 1000 # Nombre de points de temps.
+        v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
 
-    k = 15*np.pi # (L * m) / (h_bar * Nt * Dt)
+        ### Nt * Dt = t = L/v_g = L * m / h_bar * k sous le modèle des électrons quasi-libres v_g = h_bar * k /m ###
 
-    v_g = h_bar * k / m
+        h_bar = 1 
+        m = 1    
 
-    # Position initial du faisceau d'électrons.
-    x0 = L/5
-    y0 = L/2
+        k = 15*np.pi # (L * m) / (h_bar * Nt * Dt)
 
-    t_arrival = (L - x0) / v_g
+        v_g = h_bar * k / m
 
-    n0 = int(t_arrival / Dt)
+        # Position initial du faisceau d'électrons.
+        x0 = 3 
+        y0 = L/2
 
+        t_arrival = (L - x0) / v_g
+
+        n0 = int(t_arrival / Dt)
+
+            
+        Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
+
+        v, s, a = potentielSlits(Dy, Ny, L, y0)
+
+        # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
+        # v += v_abs
         
-    Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
+        mat_t = time()
+        A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
+        mem = 8 * M.nnz + 8 * A.nnz
+        print(f"Mémoire utilisée pour les matrices : {mem/10**6:.2f} Mo")
+        mat_t = time() - mat_t
+        print(f'Temps d\'exécution de création de la matrice: : {mat_t*1000:.2f} ms')
+        
+        tracemalloc.start()
+        solvemat_t = time()
+        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
+        solvemat_t = time() - solvemat_t
+        print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
+        current, peak = tracemalloc.get_traced_memory()
+        print(f"Utilisation actuelle : {current / 10**6} Mo; Pic : {peak / 10**6} Mo")
+        tracemalloc.stop()
 
-    j0, j1, i0, i1, i2, i3, v, w, s, a = potentielSlits(Dy, Ny, L, k, y0)
+        # On calcul la mémoire ici
+        M_csr = M.tocsr()
+        mem_ar[ci] = 8 * M_csr.nnz
 
-    # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
-    # v += v_abs
+    plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
+    plt.title('Exigences de mémoire')
+    plt.xlabel('Pas $d_x=d_y$ [m]')
+    plt.ylabel('Mémoire [Gb]')
+    plt.show()   
     
-    mat_t = time()
-    A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
-    mem_ar = 8 * M.nnz + 8 * A.nnz
-    print(f"Mémoire utilisée pour les matrices : {mem_ar/10**6:.2f} Mo")
-    mat_t = time() - mat_t
-    print(f'Temps d\'exécution de création de la matrice: : {mat_t*1000:.2f} ms')
-    
-    tracemalloc.start()
-    solvemat_t = time()
-    mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
-    solvemat_t = time() - solvemat_t
-    print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
-    current, peak = tracemalloc.get_traced_memory()
-    print(f"Utilisation actuelle : {current / 10**6} Mo; Pic : {peak / 10**6} Mo")
-    tracemalloc.stop()
-    
+
     n0 = len(mod_psis) // 2
-    extract_frac = 0.75
+    extract_frac = 0.85
     x_extract = extract_frac * L
-    D = abs(x_extract - L/2)
+    D = abs(x_extract - 6)
 
     final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0, extract_frac)
-    final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy   
-    
+    final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy
+
     print(f"Norme finale : {final_norm}")
 
     #Verification de la norme.
