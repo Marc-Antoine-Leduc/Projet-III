@@ -6,7 +6,7 @@ import tracemalloc
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.05]) # np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # Matrice pleine
+    fact_ar = np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # Matrice pleine
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
@@ -69,6 +69,12 @@ if __name__ == "__main__":
     plt.xlabel('Pas $d_x=d_y$ [m]')
     plt.ylabel('Mémoire [Gb]')
     plt.show()   
+
+    output_dir = "figures"
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_file = os.path.join(output_dir, "mémoire.png")
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
 
     distance_to_fentes = abs(x_fentes - x0)
     cumul_cible = distance_to_fentes * 1.1
