@@ -37,7 +37,7 @@ def potentiel_periodique(y, a, sigma=1, L=10):
     
     return V_total
 
-def potentielSlits(Dy, Ny, L, k, y0):
+def potentielSlits(Dy, Ny, L, y0):
     import numpy as np
     
     v0 = 200

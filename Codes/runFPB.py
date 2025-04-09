@@ -6,7 +6,7 @@ import tracemalloc
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.05], dtype=np.double); # Matrice pleine
+    fact_ar = np.array([0.05]) # np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # Matrice pleine
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
@@ -36,15 +36,10 @@ if __name__ == "__main__":
         # Position initial du faisceau d'électrons.
         x0 = 3 
         y0 = L/2
-
-        t_arrival = (L - x0) / v_g
-
-        n0 = int(t_arrival / Dt)
-
             
         Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
 
-        v, s, a = potentielSlits(Dy, Ny, L, y0)
+        j0, j1, i0, i1, i2, i3, v, w, s, a = potentielSlits(Dy, Ny, L, y0)
 
         # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
         # v += v_abs
@@ -75,8 +70,12 @@ if __name__ == "__main__":
     plt.ylabel('Mémoire [Gb]')
     plt.show()   
     
+    n0 = len(mod_psis) // 7
 
-    n0 = len(mod_psis) // 2
+    # t_arrival = (L - x0) / v_g
+    # n0 = int(t_arrival / Dt)
+
+    print(f"Début cumul | n0 : {n0}") 
     extract_frac = 0.85
     x_extract = extract_frac * L
     D = abs(x_extract - 6)
@@ -106,5 +105,4 @@ if __name__ == "__main__":
 
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    animation = makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac)
-
+    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac)

@@ -40,24 +40,41 @@ def makeBasicAnimation(mod_psis, Nt, L):
 
     return anim
 
-def makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac=0.75):
+def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac=0.75):
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
+    from matplotlib.patches import Rectangle
     import os
+
+    # Position à partir de laquelle psi est pris en compte (x = x0 + v_g * t)
+    x_n0 = x0 + v_g * n0 * Dt  # Position à t = n0 * Dt
+    x_extract = extract_frac * L
 
     fig, ax = plt.subplots()
     
+    # Afficher la fonction d'onde
     img_wave = ax.imshow(mod_psis[0]**2, extent=[0, L, 0, L], origin='lower',
                          cmap='hot', vmin=0, vmax=np.max(mod_psis[0]**2))
     
-    img_pot = ax.imshow(v.real, extent=[0, L, 0, L], origin='lower',
-                        cmap='gray', alpha=0.3,  
-                        vmin=0, vmax=np.max(v.real))
+    # Ne pas afficher le potentiel directement, mais dessiner les fentes comme des rectangles
+    slitcolor = "gray"  # Couleur des murs
+    slitalpha = 0.8     # Transparence des murs
+
+    # Dessiner les trois parties du mur (bas, milieu, haut) pour représenter les fentes
+    wall_bottom = Rectangle((j0*Dy, 0), w, i0*Dy, color=slitcolor, zorder=50, alpha=slitalpha)  # Bas
+    wall_middle = Rectangle((j0*Dy, i1*Dy), w, (i2-i1)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)  # Milieu
+    wall_top = Rectangle((j0*Dy, i3*Dy), w, (L-i3*Dy), color=slitcolor, zorder=50, alpha=slitalpha)  # Haut
+
+    ax.add_patch(wall_bottom)
+    ax.add_patch(wall_middle)
+    ax.add_patch(wall_top)
     
-    # Déterminer la position x_extract et tracer une ligne verticale
-    x_extract = extract_frac * L
-    D = abs(x_extract - L/2)
+    # Ligne verticale pour x_extract (position de l'écran)
     ax.axvline(x=x_extract, color='cyan', linestyle='--', linewidth=2, label='Patron extrait')
+    
+    # Ligne verticale pour x_n0 (début de la prise en compte de psi dans le cumul)
+    ax.axvline(x=x_n0, color='green', linestyle='-.', linewidth=2, 
+               label=f'Début cumul (n0={n0}, x={x_n0:.2f})')
     
     ax.set_xlim(0, L)
     ax.set_ylim(0, L)
@@ -67,7 +84,7 @@ def makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac=0.75):
         wave_sq = mod_psis[frame]**2
         img_wave.set_data(wave_sq)
         img_wave.set_clim(vmin=0, vmax=np.max(wave_sq))
-        return (img_wave, img_pot)
+        return (img_wave,)
     
     anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
     
@@ -80,7 +97,6 @@ def makeAnimationForSlits(mod_psis, v, L, Nt, extract_frac=0.75):
     anim.save(output_file, writer="ffmpeg", fps=60)
 
     return anim
-
 
 def makeAnimationForCristal(mod_psis, j0, i0, i1, i2, i3, Dy, Nt, w, L):
     """
