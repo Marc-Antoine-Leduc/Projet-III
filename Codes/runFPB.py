@@ -35,7 +35,7 @@ if __name__ == "__main__":
             
         Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
 
-        j0, j1, i0, i1, i2, i3, v, w, s, a = potentielSlits(Dy, Ny, L, y0)
+        j0, j1, i0, i1, i2, i3, v, w, s, a , x_fentes= potentielSlits(Dy, Ny, L, y0)
 
         k = 15 * np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a
 
@@ -105,4 +105,4 @@ if __name__ == "__main__":
 
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac)
+    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D)

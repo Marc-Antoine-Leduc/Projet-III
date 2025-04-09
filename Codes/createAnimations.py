@@ -6,6 +6,69 @@ from matplotlib.patches import Rectangle
 from doubleSlit_FPB_CN import theoreticalIntensity
 from scipy.signal import argrelextrema, savgol_filter
 
+def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D):
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.patches import Rectangle
+    import os
+
+    # Position à partir de laquelle psi est pris en compte (x = x0 + v_g * t)
+    x_n0 = x0 + v_g * n0 * Dt  # Position à t = n0 * Dt
+
+    fig, ax = plt.subplots()
+    
+    # Afficher la fonction d'onde
+    img_wave = ax.imshow(mod_psis[0]**2, extent=[0, L, 0, L], origin='lower',
+                         cmap='hot', vmin=0, vmax=np.max(mod_psis[0]**2))
+    
+    # Dessiner les fentes comme des rectangles
+    slitcolor = "gray"  # Couleur des murs
+    slitalpha = 0.8     # Transparence des murs
+    wall_bottom = Rectangle((j0*Dy, 0), w, i0*Dy, color=slitcolor, zorder=50, alpha=slitalpha)  # Bas
+    wall_middle = Rectangle((j0*Dy, i1*Dy), w, (i2-i1)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)  # Milieu
+    wall_top = Rectangle((j0*Dy, i3*Dy), w, (L-i3*Dy), color=slitcolor, zorder=50, alpha=slitalpha)  # Haut
+
+    ax.add_patch(wall_bottom)
+    ax.add_patch(wall_middle)
+    ax.add_patch(wall_top)
+    
+    # Ligne verticale pour x_extract (position de l'écran)
+    ax.axvline(x=x_extract, color='cyan', linestyle='--', linewidth=2, label='Patron extrait')
+    
+    # Ligne verticale pour x_n0 (début de la prise en compte de psi dans le cumul)
+    ax.axvline(x=x_n0, color='green', linestyle='-.', linewidth=2, 
+               label=f'Début cumul (n0={n0}, x={x_n0:.2f})')
+    
+    # Ligne horizontale pour D, au bas de l'animation (y = 0)
+    ax.hlines(y=0, xmin=x_fentes, xmax=x_extract, colors='yellow', linestyles='-', linewidth=5, 
+              label=f'Distance D = {D:.2f}', zorder=100)
+    
+    # Ajouter une étiquette au milieu de la ligne D
+    ax.text((x_fentes + x_extract) / 2, 0.5, f'D = {D:.2f}', color='yellow', fontsize=10, 
+            ha='center', va='bottom', zorder=101)
+
+    ax.set_xlim(0, L)
+    ax.set_ylim(0, L)
+    ax.legend()
+
+    def update(frame):
+        wave_sq = mod_psis[frame]**2
+        img_wave.set_data(wave_sq)
+        img_wave.set_clim(vmin=0, vmax=np.max(wave_sq))
+        return (img_wave,)
+    
+    anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
+    
+    plt.show()
+    
+    output_dir = "."
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "basicAnimation.mp4")
+    print(f"Enregistrement de l'animation dans : {output_file}")
+    anim.save(output_file, writer="ffmpeg", fps=60)
+
+    return anim
+
 def makeBasicAnimation(mod_psis, Nt, L):
     """
     Créer une animation avec le domaine seulement.
@@ -37,64 +100,6 @@ def makeBasicAnimation(mod_psis, Nt, L):
     print(f"Enregistrement de l'animation dans : {output_file}")
     anim.save(output_file, writer="ffmpeg", fps=60)
     plt.show()
-
-    return anim
-
-def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac=0.75):
-    import matplotlib.pyplot as plt
-    from matplotlib.animation import FuncAnimation
-    from matplotlib.patches import Rectangle
-    import os
-
-    # Position à partir de laquelle psi est pris en compte (x = x0 + v_g * t)
-    x_n0 = x0 + v_g * n0 * Dt  # Position à t = n0 * Dt
-    x_extract = extract_frac * L
-
-    fig, ax = plt.subplots()
-    
-    # Afficher la fonction d'onde
-    img_wave = ax.imshow(mod_psis[0]**2, extent=[0, L, 0, L], origin='lower',
-                         cmap='hot', vmin=0, vmax=np.max(mod_psis[0]**2))
-    
-    # Ne pas afficher le potentiel directement, mais dessiner les fentes comme des rectangles
-    slitcolor = "gray"  # Couleur des murs
-    slitalpha = 0.8     # Transparence des murs
-
-    # Dessiner les trois parties du mur (bas, milieu, haut) pour représenter les fentes
-    wall_bottom = Rectangle((j0*Dy, 0), w, i0*Dy, color=slitcolor, zorder=50, alpha=slitalpha)  # Bas
-    wall_middle = Rectangle((j0*Dy, i1*Dy), w, (i2-i1)*Dy, color=slitcolor, zorder=50, alpha=slitalpha)  # Milieu
-    wall_top = Rectangle((j0*Dy, i3*Dy), w, (L-i3*Dy), color=slitcolor, zorder=50, alpha=slitalpha)  # Haut
-
-    ax.add_patch(wall_bottom)
-    ax.add_patch(wall_middle)
-    ax.add_patch(wall_top)
-    
-    # Ligne verticale pour x_extract (position de l'écran)
-    ax.axvline(x=x_extract, color='cyan', linestyle='--', linewidth=2, label='Patron extrait')
-    
-    # Ligne verticale pour x_n0 (début de la prise en compte de psi dans le cumul)
-    ax.axvline(x=x_n0, color='green', linestyle='-.', linewidth=2, 
-               label=f'Début cumul (n0={n0}, x={x_n0:.2f})')
-    
-    ax.set_xlim(0, L)
-    ax.set_ylim(0, L)
-    ax.legend()
-
-    def update(frame):
-        wave_sq = mod_psis[frame]**2
-        img_wave.set_data(wave_sq)
-        img_wave.set_clim(vmin=0, vmax=np.max(wave_sq))
-        return (img_wave,)
-    
-    anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
-    
-    plt.show()
-    
-    output_dir = "."
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "basicAnimation.mp4")
-    print(f"Enregistrement de l'animation dans : {output_file}")
-    anim.save(output_file, writer="ffmpeg", fps=60)
 
     return anim
 
