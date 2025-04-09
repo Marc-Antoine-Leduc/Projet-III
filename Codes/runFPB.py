@@ -69,12 +69,14 @@ if __name__ == "__main__":
     plt.xlabel('Pas $d_x=d_y$ [m]')
     plt.ylabel('Mémoire [Gb]')
     plt.show()   
+
+    distance_to_fentes = abs(x_fentes - x0)
+    cumul_cible = distance_to_fentes * 1.1
+
+    t_arrival = abs(cumul_cible) / v_g  # Temps pour atteindre x_center
+    n0 = int(t_arrival / Dt)  # Convertir en pas de temps
+    n0 = max(0, min(n0, Nt-1))  # S'assurer que n0 est dans les limites [0, Nt-1])
     
-    n0 = len(mod_psis) // 7
-
-    # t_arrival = (L - x0) / v_g
-    # n0 = int(t_arrival / Dt)
-
     print(f"Début cumul | n0 : {n0}") 
     extract_frac = 0.85
     x_extract = extract_frac * L
