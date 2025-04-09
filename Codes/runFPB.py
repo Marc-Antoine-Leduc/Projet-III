@@ -29,10 +29,6 @@ if __name__ == "__main__":
         h_bar = 1 
         m = 1    
 
-        k = 15*np.pi # (L * m) / (h_bar * Nt * Dt)
-
-        v_g = h_bar * k / m
-
         # Position initial du faisceau d'électrons.
         x0 = 3 
         y0 = L/2
@@ -40,6 +36,10 @@ if __name__ == "__main__":
         Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
 
         j0, j1, i0, i1, i2, i3, v, w, s, a = potentielSlits(Dy, Ny, L, y0)
+
+        k = 15 * np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a
+
+        v_g = h_bar * k / m
 
         # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
         # v += v_abs
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         
         tracemalloc.start()
         solvemat_t = time()
-        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy)
+        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k)
         solvemat_t = time() - solvemat_t
         print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
         current, peak = tracemalloc.get_traced_memory()

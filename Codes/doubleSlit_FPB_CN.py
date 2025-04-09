@@ -7,7 +7,7 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse.linalg import factorized
 from scipy.sparse import lil_matrix, diags
 
-def psi0(x, y, x0, y0, sigma=1, k=15*np.pi):
+def psi0(x, y, x0, y0, sigma, k):
     N = 1 / (sigma * np.sqrt(np.pi))  # Facteur de normalisation
     conditionInitiale = N * np.exp(-1/2*((x-x0)**2 + (y-y0)**2)/sigma**2) * np.exp(1j*k*(x-x0))
     return conditionInitiale
@@ -63,7 +63,7 @@ def buildMatrix(Ni, Nx, Ny, Dy, Dt, v):
 
 ####################################################
 
-def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
+def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k):
     """
     Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
 
@@ -87,7 +87,9 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy):
     y = np.linspace(0, L, Ny-2)
     x, y = np.meshgrid(x, y)
     
-    psi = psi0(x, y, x0, y0)
+    sigma = 1
+
+    psi = psi0(x, y, x0, y0, sigma, k)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
     mod_psis = [np.abs(psi)]  
     norms = []
