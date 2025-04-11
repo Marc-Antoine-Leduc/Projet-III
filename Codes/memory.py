@@ -3,39 +3,69 @@ import psutil
 from potentiel import *
 from doubleSlit_FPB_CN import *
 from createAnimations import *
+from scipy.stats import linregress
 
-"""
-Regarder la variation de la mémoire en fonction de différents paramètres.
-"""
-    
-dy_values = np.linspace(0.02, 0.07, 10)
-    
-for dy in dy_values:
+def errorConv(mod_psis_ar):
+    ref_psi = mod_psis_ar[0]
+    erreur = []
         
-        Dt = dy**2/4 # Pas de temps.
-        L = 8 # Grandeur de la simulation (de la boîte).
-        Nx = int(L/dy) + 1 # Grandeur du grillage en x.
-        Ny = int(L/dy) + 1 # Grandeur du grillage en y.
-        Nt = 500 # Nombre de points de temps.
-        v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
-        k = 5*np.pi # Nombre d'ondes dans la boîte.
-        
-        # Position initial du faisceau d'électrons.
-        x0 = L/5
-        y0 = L/2
-        
-        Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
-        
-        j0, j1, i0, i1, i2, i3, v, w = potentielSlits(dy, Ny, L, k, y0)
-        
-        A, M = buildMatrix(Ni, Nx, Ny, dy, Dt, v)
-        
-        mod_psis, initial_norm = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, dy)
-        
-        final_psi = diffractionPatron(mod_psis, L, Ny)
-        final_norm = np.sum(np.abs(final_psi)**2) * dy * dy
-        
-        print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
-        mem = psutil.Process().memory_info().rss / (1024 * 1024)
-        print(dy)
-        print(mem)
+    for i in range(1, len(mod_psis_ar)):
+        psi_i = mod_psis_ar[i]
+
+        # Dimensions de la référence et de la comparaison
+        nx0, ny0 = ref_psi.shape
+        nxi, nyi = psi_i.shape
+        Lx = Ly = 20
+
+        x0 = np.linspace(0, Lx, nx0)
+        y0 = np.linspace(0, Ly, ny0)
+        xi = np.linspace(0, Lx, nxi)
+        yi = np.linspace(0, Ly, nyi)
+
+        x_common = np.intersect1d(x0, xi)
+        y_common = np.intersect1d(y0, yi)
+
+        mask_x0 = np.isin(x0, x_common)
+        mask_y0 = np.isin(y0, y_common)
+        mask_xi = np.isin(xi, x_common)
+        mask_yi = np.isin(yi, y_common)
+
+        psi0_common = ref_psi[np.ix_(mask_x0, mask_y0)]
+        psii_common = psi_i[np.ix_(mask_xi, mask_yi)]
+
+        err_i = np.linalg.norm(psi0_common - psii_common) / np.linalg.norm(psii_common)
+        erreur.append(err_i)
+
+    erreur = np.array(erreur)
+    d_ar = d_ar[1:]
+
+    log_d = np.log(d_ar)
+    log_err = np.log(erreur)
+
+    slope, intercept, r_value, _, _ = linregress(log_d, log_err)
+    fit = slope * log_d + intercept
+
+    plt.plot(log_d, log_err, 'o', label='Erreur en échelle logarithmique')
+    plt.plot(log_d, fit, '--', label=f"Régression linéaire\npente = {slope:.2f}")
+    plt.xlabel("log(Pas d'espace)")
+    plt.ylabel("log(Erreur de convergence)")
+    plt.title("Erreur de convergence en fonction du pas d'espace sur une échelle log-log")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    return
+
+def memoryCalcul(d_ar, mem_ar):
+    plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
+    plt.title('Exigences de mémoire')
+    plt.xlabel('Pas $d_x=d_y$ [m]')
+    plt.ylabel('Mémoire [Gb]')
+    plt.show()   
+
+    output_dir = "figures"
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_file = os.path.join(output_dir, "mémoire.png")
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    return
