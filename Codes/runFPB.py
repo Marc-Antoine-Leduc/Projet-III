@@ -3,10 +3,13 @@ from doubleSlit_FPB_CN import *
 from createAnimations import *
 from time import time
 import tracemalloc
+import os
+
+convergence_calculated = False
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # Matrice pleine
+    fact_ar = np.array([0.0500], dtype=np.double); # np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # Matrice pleine
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
@@ -18,7 +21,7 @@ if __name__ == "__main__":
 
         L = 20 # Grandeur de la simulation (de la boîte).
         Dy = fact # Pas d'espace.
-        Dt = Dy**2/4 # Pas de temps.
+        Dt = (Dy**2)/4 # Pas de temps.
         Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
         Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
         Nt = 1000 # Nombre de points de temps.
@@ -53,7 +56,7 @@ if __name__ == "__main__":
         
         tracemalloc.start()
         solvemat_t = time()
-        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k)
+        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k) # mod_psis est une liste de matrices (𝑁x−2)x(Ny-2)
         solvemat_t = time() - solvemat_t
         print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
         current, peak = tracemalloc.get_traced_memory()
@@ -63,6 +66,12 @@ if __name__ == "__main__":
         # On calcul la mémoire ici
         M_csr = M.tocsr()
         mem_ar[ci] = 8 * M_csr.nnz
+
+    if not convergence_calculated:
+        dy_list = [0.08, 0.04, 0.02]
+        T = 0.05  
+        errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list)
+        convergence_calculated = True
 
     plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
     plt.title('Exigences de mémoire')
