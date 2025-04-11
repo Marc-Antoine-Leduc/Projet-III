@@ -22,9 +22,11 @@ if __name__ == "__main__":
         L = 20 # Grandeur de la simulation (de la boîte).
         Dy = fact # Pas d'espace.
         Dt = (Dy**2)/4 # Pas de temps.
+        T = 0.8 # Temps total de simulation. 0.8 fonctionne bien pour mener à Nt = 1000, qui marchait bien pour Dy = 0.05
         Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
         Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
-        Nt = 1000 # Nombre de points de temps.
+        Nt = int(T / Dt) # 1000 # Nombre de points de temps.
+        print(f"Nombre de points de temps : {Nt}")
         v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
 
         ### Nt * Dt = t = L/v_g = L * m / h_bar * k sous le modèle des électrons quasi-libres v_g = h_bar * k /m ###
@@ -40,7 +42,7 @@ if __name__ == "__main__":
 
         j0, j1, i0, i1, i2, i3, v, w, s, a , x_fentes= potentielSlits(Dy, Ny, L, y0)
 
-        k = 15 * np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a
+        k = 15 * np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a ; 15 * np.pi 
 
         v_g = h_bar * k / m
 
@@ -67,11 +69,11 @@ if __name__ == "__main__":
         M_csr = M.tocsr()
         mem_ar[ci] = 8 * M_csr.nnz
 
-    if not convergence_calculated:
-        dy_list = [0.08, 0.04, 0.02]
-        T = 0.05  
-        errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list)
-        convergence_calculated = True
+    # if not convergence_calculated:
+    #     dy_list = [0.08, 0.04, 0.02]
+    #     T = 0.05  
+    #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list)
+    #     convergence_calculated = True
 
     plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
     plt.title('Exigences de mémoire')
@@ -102,11 +104,10 @@ if __name__ == "__main__":
 
     print(f"Norme finale : {final_norm}")
 
-    #Verification de la norme.
-    # assert 0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05
+    assert 0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05
 
-    # print(f"Probabilité totale initiale : {initial_norm}")
-    # print(f"Probabilité totale finale : {final_norm}")
+    print(f"Probabilité totale initiale : {initial_norm}")
+    print(f"Probabilité totale finale : {final_norm}")
 
     plt.figure(figsize=(10, 6))
     time_steps = np.arange(len(norms)) * Dt 

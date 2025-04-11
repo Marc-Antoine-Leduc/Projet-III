@@ -7,6 +7,7 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse.linalg import factorized
 from scipy.sparse import lil_matrix, diags
 from potentiel import potentielSlits
+import os
 
 def psi0(x, y, x0, y0, sigma, k):
     N = 1 / (sigma * np.sqrt(np.pi))  # Facteur de normalisation
