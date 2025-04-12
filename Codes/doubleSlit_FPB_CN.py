@@ -64,7 +64,7 @@ def buildMatrix(Ni, Nx, Ny, Dy, Dt, v):
 
 ####################################################
 
-def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k):
+def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
     """
     Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
 
@@ -87,8 +87,6 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k):
     x = np.linspace(0, L, Ny-2)
     y = np.linspace(0, L, Ny-2)
     x, y = np.meshgrid(x, y)
-    
-    sigma = 1
 
     psi = psi0(x, y, x0, y0, sigma, k)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
@@ -119,14 +117,12 @@ def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k):
 
     return mod_psis, initial_norm, norms
 
-def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k):
+def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
     solve = factorized(A)
 
     x = np.linspace(0, L, Ny-2)
     y = np.linspace(0, L, Ny-2)
     x, y = np.meshgrid(x, y)
-    
-    sigma = 1
 
     psi = psi0(x, y, x0, y0, sigma, k)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
@@ -150,25 +146,27 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k):
     final_psi = np.abs(psi)
     return final_psi, initial_norm, norms
 
-def convergence_erreur(L, T, x0, y0, k, dy_list):
+def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w):
     print("Calcul de l'erreur de convergence numérique...")
     solutions = []
     grids = []
+
+    v0 = 200
 
     for Dy in dy_list:
         print(f"Calcul pour Dy = {Dy}...")
         Nx = int(L / Dy) + 1
         Ny = int(L / Dy) + 1
-        Dt = Dy**2 / 4
+        Dt = Dy**2
         Nt = int(T / Dt)
         print(f"Nt = {Nt}")
 
-        j0, j1, i0, i1, i2, i3, v, w, s, a, x_fentes = potentielSlits(Dy, Ny, L, y0)
+        j0, j1, i0, i1, i2, i3, v, x_fentes = potentielSlits(Dy, Ny, L, y0, s, w, v0, a)
         print(f"Max potential value for Dy = {Dy}: {np.max(np.abs(v)):.6e}")
 
         Ni = (Nx - 2) * (Ny - 2)
         A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
-        final_psi, initial_norm, norms = solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k)
+        final_psi, initial_norm, norms = solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma)
 
         final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
         print(f"Norme initiale pour Dy = {Dy} : {initial_norm:.6f}")

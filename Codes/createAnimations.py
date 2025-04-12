@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle
 from doubleSlit_FPB_CN import theoreticalIntensity
 from scipy.signal import argrelextrema, savgol_filter
 
-def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D):
+def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma):
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
     from matplotlib.patches import Rectangle
@@ -16,7 +16,7 @@ def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i
     x_n0 = x0 + v_g * n0 * Dt  # Position à t = n0 * Dt
 
     fig, ax = plt.subplots()
-    
+
     # Afficher la fonction d'onde
     img_wave = ax.imshow(mod_psis[0]**2, extent=[0, L, 0, L], origin='lower',
                          cmap='hot', vmin=0, vmax=np.max(mod_psis[0]**2))
@@ -31,6 +31,12 @@ def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i
     ax.add_patch(wall_bottom)
     ax.add_patch(wall_middle)
     ax.add_patch(wall_top)
+
+    # Calcul de la position limite imposée par T
+    x_T = x0 + v_g * (Nt * Dt)  # Position à t = T
+
+    # Ligne verticale pour x_T (limite imposée par T)
+    ax.axvline(x=x_T, color='purple', linestyle=':', linewidth=2, label=f'Limite T (x={x_T:.2f})')
     
     # Ligne verticale pour x_extract (position de l'écran)
     ax.axvline(x=x_extract, color='cyan', linestyle='--', linewidth=2, label='Patron extrait')
@@ -51,10 +57,14 @@ def makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i
     ax.set_ylim(0, L)
     ax.legend()
 
+    max_psi = np.max(mod_psis[0]**2)  # Intensité max du paquet initial
+    img_wave = ax.imshow(mod_psis[0]**2, extent=[0, L, 0, L], origin='lower',
+                         cmap='hot', vmin=0, vmax=max_psi)
+
     def update(frame):
         wave_sq = mod_psis[frame]**2
         img_wave.set_data(wave_sq)
-        img_wave.set_clim(vmin=0, vmax=np.max(wave_sq))
+        img_wave.set_clim(vmin=0, vmax=max_psi)
         return (img_wave,)
     
     anim = FuncAnimation(fig, update, frames=Nt, interval=50, blit=False)
@@ -213,8 +223,6 @@ def fit(y_screen, cumulative_intensity, s, a_initial, k, D, L):
 
     # Afficher les résultats
     print(f"Largeur des fentes ajustée (a) : {a_fit:.4f} ± {a_err:.4f}")
-    print(f"Largeur des fentes théorique (a) : {a_initial:.4f}")
-    print(f"Facteur d'échelle ajusté (I_0) : {I_0_fit:.4f} ± {I_0_err:.4f}")
 
     # Tracé
     plt.figure(figsize=(10, 6))
@@ -230,34 +238,66 @@ def fit(y_screen, cumulative_intensity, s, a_initial, k, D, L):
 
     return a_fit, I_0_fit
 
-def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
+def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=None, Dt=None, v_g=None):
     """
     Affiche le patron de diffraction cumulé sur l'écran à x = extract_frac * L,
-    en ne prenant en compte que les instants après n0, et superpose le patron théorique.
-
+    en ne prenant en compte que les instants après n0, jusqu'à ce que x_extract soit atteint.
+    Calcule et affiche la vitesse de propagation expérimentale.
+    
     Args:
         mod_psis (list of arrays): Liste des modules de la fonction d'onde à chaque pas de temps.
         L (float): Longueur du domaine.
         Ny (int): Nombre de points dans la direction y.
-        s (float): Distance entre les fentes (défini dans potentiel.py).
-        a (float): Largeur effective des fentes (défini dans potentiel.py).
+        s (float): Distance entre les fentes.
+        a (float): Largeur effective des fentes.
         k (float): Vecteur d'onde.
-        n0 (int, optionnel): Indice de temps à partir duquel commencer le cumul.
-        extract_frac (float, optionnel): Fraction de L pour l'extraction (ex. 0.75).
+        D (float): Distance entre le plan des fentes et l'écran.
+        n0 (int, optional): Indice de temps à partir duquel commencer le cumul.
+        extract_frac (float, optional): Fraction de L pour l'extraction (ex. 0.75).
+        x0 (float, optional): Position initiale du paquet, pour calculer la vitesse expérimentale.
+        Dt (float, optional): Pas de temps, pour calculer la vitesse expérimentale.
+        v_g (float, optional): Vitesse de groupe théorique, pour comparaison.
     
     Returns:
-        cumulative_intensity (array): Intensité cumulative sur l'écran (à x = extract_frac * L) après n0.
+        cumulative_intensity (array): Intensité cumulative sur l'écran.
     """
-
     # Maillage spatial sur [0, L]
     y_screen = np.linspace(0, L, mod_psis[0].shape[0])
     
-    # Déterminer l'indice de la colonne correspondant à x = extract_frac * L.
+    # Déterminer l'indice de la colonne correspondant à x = extract_frac * L
     j_extract = int(extract_frac * mod_psis[0].shape[1])
+    x_extract = extract_frac * L
     
-    # Cumul de l'intensité sur la colonne d'extraction, à partir de n0
+    # Trouver le pas de temps où x_extract est atteint
+    n_stop = len(mod_psis)  # Par défaut, utiliser tous les pas de temps
+    threshold = 0.01 * np.max([np.sum(np.abs(psi)**2) for psi in mod_psis])  # Seuil basé sur 1% de l'intensité max
+    
+    for n, psi in enumerate(mod_psis[n0:], start=n0):
+        intensity_at_extract = np.sum(np.abs(psi[:, j_extract])**2)
+        if intensity_at_extract > threshold:
+            n_stop = n + 10  # Ajouter quelques pas pour capturer le passage complet
+            break
+
+    print(f"x_extract atteint à n_stop = {n_stop}, len(mod_psis) = {len(mod_psis)}")
+    
+    # S'assurer que n_stop ne dépasse pas Nt
+    n_stop = min(n_stop, len(mod_psis))
+    
+    # Calculer la vitesse expérimentale si x0, Dt et v_g sont fournis
+    if x0 is not None and Dt is not None and v_g is not None:
+        if n_stop > n0:
+            time_to_extract = (n_stop - n0) * Dt  # Temps écoulé depuis n0
+            distance = x_extract - x0
+            v_exp = distance / time_to_extract if time_to_extract > 0 else 0
+            print(f"Vitesse expérimentale : v_exp = {v_exp:.4f}")
+            print(f"Vitesse théorique : v_g = {v_g:.4f}")
+            print(f"Différence relative : {abs(v_exp - v_g) / v_g * 100:.2f}%")
+        else:
+            print("Erreur : x_extract n'a pas été atteint après n0.")
+    
+    # Cumul de l'intensité sur la colonne d'extraction, de n0 à n_stop
     cumulative_intensity = np.zeros(mod_psis[0].shape[0])
-    for psi in mod_psis[n0:]:
+    for psi in mod_psis[n0:n_stop]:
         cumulative_intensity += np.abs(psi[:, j_extract])**2
 
     # Pour le patron théorique, on centre la coordonnée y autour de L/2
@@ -269,7 +309,7 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
         max_theo = 1e-15  # éviter division par zéro
     theo_intensity_norm = theo_intensity * (max_sim / max_theo)
 
-    # --- Extraction de la largeur des fentes---
+    # --- Extraction de la largeur des fentes ---
     lambda_ = 2 * np.pi / k  # Longueur d'onde
 
     # Lisser le patron simulé pour isoler l'enveloppe
@@ -293,7 +333,7 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
         delta_y = y_right - y_left
 
         # Calcul de la largeur des fentes
-        a_calculated = (2 * lambda_ * D) / delta_y      # y_n= nλD/a
+        a_calculated = (2 * lambda_ * D) / delta_y  # y_n = nλD/a
 
         print(f"Largeur des fentes calculée : {a_calculated:.4f}")
         print(f"Largeur des fentes théorique : {a:.4f}")
@@ -321,7 +361,6 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75):
     a_fit, I_0_fit = fit(y_screen, cumulative_intensity, s, a, k, D, L)
 
     return cumulative_intensity
-
 
 
 ####################################################

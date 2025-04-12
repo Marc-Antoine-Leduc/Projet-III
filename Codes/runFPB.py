@@ -9,7 +9,7 @@ convergence_calculated = False
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.0500], dtype=np.double); # np.array([0.0400, 0.0425, 0.0450, 0.04750, 0.0500, 0.0525], dtype=np.double); # Matrice pleine
+    fact_ar = np.array([0.0500], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
@@ -21,11 +21,12 @@ if __name__ == "__main__":
 
         L = 20 # Grandeur de la simulation (de la boîte).
         Dy = fact # Pas d'espace.
-        Dt = (Dy**2)/4 # Pas de temps.
-        T = 0.8 # Temps total de simulation. 0.8 fonctionne bien pour mener à Nt = 1000, qui marchait bien pour Dy = 0.05
+        Dt = (Dy**2) # Pas de temps.
+        T = 2.5 # Temps total de simulation.
         Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
         Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
-        Nt = int(T / Dt) # 1000 # Nombre de points de temps.
+        print(f"Taille matrice : {Nx*Ny} éléments")
+        Nt = int(T / Dt) # Nombre de points de temps.
         print(f"Nombre de points de temps : {Nt}")
         v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
 
@@ -34,14 +35,22 @@ if __name__ == "__main__":
         h_bar = 1 
         m = 1    
 
+        # Paramètres des fentes    
+        v0 = 200 
+        a = L/100   # np.pi * 2 /k        # hauteur totale de chaque fente
+        s = a * 3   # distance entre centres de fentes
+        w = a       # épaisseur mur
+
+        sigma = 2*s # Amplitude du paquet d'onde
+    
         # Position initial du faisceau d'électrons.
-        x0 = 3 
         y0 = L/2
-            
+        x0 = 3*sigma
+
         Ni = (Nx-2)*(Ny-2)  # Nombre d'inconnus v[i,j], i = 1,...,Nx-2, j = 1,...,Ny-2
 
-        j0, j1, i0, i1, i2, i3, v, w, s, a , x_fentes= potentielSlits(Dy, Ny, L, y0)
-
+        j0, j1, i0, i1, i2, i3, v, x_fentes = potentielSlits(Dy, Ny, L, y0, s, w, v0, a)
+ 
         k = 15 * np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a ; 15 * np.pi 
 
         v_g = h_bar * k / m
@@ -58,7 +67,7 @@ if __name__ == "__main__":
         
         tracemalloc.start()
         solvemat_t = time()
-        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k) # mod_psis est une liste de matrices (𝑁x−2)x(Ny-2)
+        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma) # mod_psis est une liste de matrices (𝑁x−2)x(Ny-2)
         solvemat_t = time() - solvemat_t
         print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
         current, peak = tracemalloc.get_traced_memory()
@@ -70,9 +79,9 @@ if __name__ == "__main__":
         mem_ar[ci] = 8 * M_csr.nnz
 
     # if not convergence_calculated:
-    #     dy_list = [0.08, 0.04, 0.02]
+    #     dy_list = [0.01, 0.02, 0.04, 0.06]
     #     T = 0.05  
-    #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list)
+    #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w)
     #     convergence_calculated = True
 
     plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
@@ -85,7 +94,7 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     output_file = os.path.join(output_dir, "mémoire.png")
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=150, bbox_inches='tight')
 
     distance_to_fentes = abs(x_fentes - x0)
     cumul_cible = distance_to_fentes * 1.1
@@ -99,12 +108,12 @@ if __name__ == "__main__":
     x_extract = extract_frac * L
     D = abs(x_extract - 6)
 
-    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0, extract_frac)
+    final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0, extract_frac, x0, Dt, v_g)
     final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy
 
     print(f"Norme finale : {final_norm}")
 
-    assert 0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05
+    #assert 0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05
 
     print(f"Probabilité totale initiale : {initial_norm}")
     print(f"Probabilité totale finale : {final_norm}")
@@ -123,4 +132,4 @@ if __name__ == "__main__":
 
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D)
+    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)

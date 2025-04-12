@@ -37,13 +37,8 @@ def potentiel_periodique(y, a, sigma=1, L=10):
     
     return V_total
 
-def potentielSlits(Dy, Ny, L, y0):
-    import numpy as np
-    
-    v0 = 200
-    w = 0.2       # épaisseur mur
-    a = L /(5*L) # np.pi * 2 /k        # hauteur totale de chaque fente
-    s = a * 3       # distance entre centres de fentes
+def potentielSlits(Dy, Ny, L, y0, s, w, v0, a):
+
     slit_half = a / 2
 
     # -- Calcul des indices horizontaux (j0, j1) pour positionner le mur au centre en x --
@@ -72,7 +67,7 @@ def potentielSlits(Dy, Ny, L, y0):
     v[i1:i2,  j0:j1] = v0
     v[i3:,    j0:j1] = v0
 
-    return j0, j1, i0, i1, i2, i3, v, w, s, a, x_center
+    return j0, j1, i0, i1, i2, i3, v, x_center
 
 def showPotential(v, L, title="Visualisation du Potentiel"):
     """
