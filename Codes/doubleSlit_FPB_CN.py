@@ -169,6 +169,9 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
         print(f"Norme initiale pour Dy = {Dy} : {initial_norm:.6f}")
         print(f"Norme finale pour Dy = {Dy} : {final_norm:.6f}")
 
+        if not (0.95 <= final_norm <= 1.05):
+            print(f"Avertissement : Norme finale hors des limites pour Dy={Dy} : {final_norm:.6f}")
+
         solutions.append(final_psi)
         grids.append((Nx, Ny, Dy))
 
@@ -195,7 +198,7 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
             raise ValueError(f"Dimensions mismatch: psi1_subsampled {psi1_subsampled.shape}, psi2 {psi2.shape}")
 
         diff = np.abs(psi1_subsampled - psi2)
-        error_l2 = np.sqrt(np.sum(diff**2) * Dy2 * Dy2)
+        error_l2 = np.sqrt(np.sum(np.abs(diff)**2) * Dy2 * Dy2) / np.sqrt(final_norm)
         errors_l2.append(error_l2)
 
     orders_l2 = []
@@ -224,7 +227,9 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
     plt.title('Convergence numérique (norme euclidienne)')
     plt.grid(True, which="both", ls="--")
     plt.legend()
-
+    # Ajout des annotations pour l'ordre
+    for i in range(len(orders_l2)):
+        plt.text(dy_list[i+1], errors_l2[i], f'Ordre={orders_l2[i]:.2f}', fontsize=10, ha='right')
     output_dir = "figures"
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "convergence_error.png")

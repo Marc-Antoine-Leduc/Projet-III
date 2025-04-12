@@ -234,6 +234,10 @@ def fit(y_screen, cumulative_intensity, s, a_initial, k, D, L):
     plt.title("Ajustement du patron de diffraction pour extraire la largeur des fentes")
     plt.grid(True)
     plt.legend()
+    output_dir = "figures"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "diffraction_fit.png")
+    plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.show()
 
     return a_fit, I_0_fit
@@ -270,8 +274,13 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     
     # Trouver le pas de temps où x_extract est atteint
     n_stop = len(mod_psis)  # Par défaut, utiliser tous les pas de temps
-    threshold = 0.0001 * np.max([np.sum(np.abs(psi)**2) for psi in mod_psis])  
-    
+
+    # Calculer l'intensité maximale à x_extract
+    max_intensity_at_extract = np.max([np.sum(np.abs(psi[:, j_extract])**2) for psi in mod_psis])
+    threshold = 0.03 * max_intensity_at_extract  # Sert à détecter le moment où le paquet d'onde atteint 𝑥_extract, car le paquet d'onde semble ralenti
+
+    # Quand l'intensité de l'onde à 𝑥_extract devient assez grande, on considère que le paquet est arrivé. Permet de corriger v_g
+        
     for n, psi in enumerate(mod_psis[n0:], start=n0):
         intensity_at_extract = np.sum(np.abs(psi[:, j_extract])**2)
         if intensity_at_extract > threshold:
@@ -282,6 +291,41 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     
     # S'assurer que n_stop ne dépasse pas Nt
     n_stop = min(n_stop, len(mod_psis))
+    
+    # Diagnostic pour vérifier si threshold est approprié
+    # Calculer l'intensité à x_extract pour chaque pas de temps à partir de n0
+    intensities = [np.sum(np.abs(psi[:, j_extract])**2) for psi in mod_psis[n0:n_stop]]
+
+    # Calculer les temps correspondants
+    times = np.arange(n0, n_stop) * Dt
+
+    # Tracer l'évolution de l'intensité
+    plt.figure(figsize=(10, 6))
+    plt.plot(times, intensities, label='Intensité à x_extract')
+    plt.axhline(y=threshold, color='r', linestyle='--', label=f'Seuil = {threshold:.2e}')
+    plt.axvline(x=(n_stop - n0) * Dt + n0 * Dt, color='g', linestyle='--', label=f'n_stop = {n_stop}')
+    if x0 is not None and v_g is not None:
+        t_theoretical = (x_extract - x0) / v_g
+        n_theoretical = int(t_theoretical / Dt)
+        plt.axvline(x=t_theoretical, color='b', linestyle='--', label=f'Temps théorique = {t_theoretical:.4f} s (n={n_theoretical})')
+    plt.xlabel('Temps (s)')
+    plt.ylabel('Intensité (|ψ|²)')
+    plt.title("Évolution de l'intensité à x_extract")
+    plt.grid(True)
+    plt.legend()
+    output_dir = "figures"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "intensity_at_x_extract.png")
+    plt.savefig(output_file, dpi=150, bbox_inches='tight')
+    plt.show()
+
+    # Ajouter un message pour guider l'ajustement du seuil
+    if n_stop == len(mod_psis):
+        print("Avertissement : n_stop a atteint la fin de la simulation. Le seuil est probablement trop élevé.")
+    elif n_stop - n0 < 10:
+        print("Avertissement : n_stop est très proche de n0. Le seuil est probablement trop bas.")
+    else:
+        print(f"Seuil semble correct : n_stop détecté à t = {(n_stop - n0) * Dt + n0 * Dt:.4f} s")
     
     # Calculer la vitesse expérimentale si x0, Dt et v_g sont fournis
     if x0 is not None and Dt is not None and v_g is not None:
@@ -313,10 +357,10 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     lambda_ = 2 * np.pi / k  # Longueur d'onde
 
     # Lisser le patron simulé pour isoler l'enveloppe
-    window_size = 11  # Taille de la fenêtre pour le lissage (doit être impair)
+    window_size = 11 
     if window_size >= len(cumulative_intensity):
         window_size = len(cumulative_intensity) // 2 * 2 + 1 
-    smoothed_intensity = savgol_filter(cumulative_intensity, window_size, 3)  # Lissage 
+    smoothed_intensity = savgol_filter(cumulative_intensity, window_size, 3) # Lissage 
 
     # Trouver les minimas locaux dans l'enveloppe lissée
     center_idx = len(y_screen) // 2
@@ -350,12 +394,15 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     if y_left is not None and y_right is not None:
         plt.axvline(x=y_left, color='r', linestyle='--', label=f'Minima gauche (y={y_left:.2f})')
         plt.axvline(x=y_right, color='g', linestyle='--', label=f'Minima droite (y={y_right:.2f})')
-
     plt.xlabel('Position y')
     plt.ylabel('Intensité cumulative (|ψ|²)')
     plt.title("Comparaison du patron de diffraction simulé et théorique")
     plt.grid(True)
     plt.legend()
+    output_dir = "figures"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "diffraction_patron.png")
+    plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.show()
 
     a_fit, I_0_fit = fit(y_screen, cumulative_intensity, s, a, k, D, L)
