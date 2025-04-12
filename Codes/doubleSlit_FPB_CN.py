@@ -146,12 +146,10 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
     final_psi = np.abs(psi)
     return final_psi, initial_norm, norms
 
-def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w):
+def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
     print("Calcul de l'erreur de convergence numérique...")
     solutions = []
     grids = []
-
-    v0 = 200
 
     for Dy in dy_list:
         print(f"Calcul pour Dy = {Dy}...")
@@ -162,7 +160,6 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w):
         print(f"Nt = {Nt}")
 
         j0, j1, i0, i1, i2, i3, v, x_fentes = potentielSlits(Dy, Ny, L, y0, s, w, v0, a)
-        print(f"Max potential value for Dy = {Dy}: {np.max(np.abs(v)):.6e}")
 
         Ni = (Nx - 2) * (Ny - 2)
         A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
@@ -177,27 +174,34 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w):
 
     errors_l2 = []
     for i in range(len(solutions) - 1):
-        psi1 = solutions[i]
-        psi2 = solutions[i + 1]
-        Nx1, Ny1, Dy1 = grids[i]
-        Nx2, Ny2, Dy2 = grids[i + 1]
+        psi1 = solutions[i]  # Grille fine (Dy1 petit)
+        psi2 = solutions[i + 1]  # Grille grossière (Dy2 grand)
+        Nx1, Ny1, Dy1 = grids[i]  # Grille fine
+        Nx2, Ny2, Dy2 = grids[i + 1]  # Grille grossière
 
-        factor = int(Dy1 / Dy2)
-        target_size = Nx1 - 2
-        indices = np.arange(0, Nx2-2, factor)[:target_size]
-        psi2_subsampled = psi2[indices, :][:, indices]
+        # Calculer le facteur de sous-échantillonnage
+        factor = max(1, (Nx1 - 2) // (Nx2 - 2))
+        target_size = Nx2 - 2  # Taille de la grille grossière
+        indices = np.arange(0, Nx1-2, factor)[:target_size]
+        
+        if len(indices) != target_size:
+            print(f"Avertissement : Ajustement des indices pour Dy1={Dy1}, Dy2={Dy2}")
+            indices = np.linspace(0, Nx1-3, target_size, dtype=int)
+        
+        psi1_subsampled = psi1[indices, :][:, indices]
 
-        if psi2_subsampled.shape != psi1.shape:
-            raise ValueError(f"Dimensions mismatch: psi1 {psi1.shape}, psi2_subsampled {psi2_subsampled.shape}")
+        if psi1_subsampled.shape != psi2.shape:
+            print(f"Dimensions après ajustement : psi1_subsampled {psi1_subsampled.shape}, psi2 {psi2.shape}")
+            raise ValueError(f"Dimensions mismatch: psi1_subsampled {psi1_subsampled.shape}, psi2 {psi2.shape}")
 
-        diff = np.abs(psi1 - psi2_subsampled)
-        error_l2 = np.sqrt(np.sum(diff**2) * Dy1 * Dy1)
+        diff = np.abs(psi1_subsampled - psi2)
+        error_l2 = np.sqrt(np.sum(diff**2) * Dy2 * Dy2)
         errors_l2.append(error_l2)
 
     orders_l2 = []
     for i in range(len(errors_l2) - 1):
         if errors_l2[i + 1] > 0 and errors_l2[i] > 0:
-            order = np.log(errors_l2[i] / errors_l2[i + 1]) / np.log(2)
+            order = np.log(errors_l2[i] / errors_l2[i + 1]) / np.log(dy_list[i + 1] / dy_list[i])
             orders_l2.append(order)
         else:
             orders_l2.append(0)
@@ -224,8 +228,10 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w):
     output_dir = "figures"
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "convergence_error.png")
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.show()
+
+    return errors_l2, orders_l2
 
 def theoreticalIntensity(y, s, a, D, k, I_0=1):
     """

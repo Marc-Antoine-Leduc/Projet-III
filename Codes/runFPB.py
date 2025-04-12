@@ -9,7 +9,7 @@ convergence_calculated = False
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.0500], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
+    fact_ar = np.array([0.05], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         L = 20 # Grandeur de la simulation (de la boîte).
         Dy = fact # Pas d'espace.
         Dt = (Dy**2) # Pas de temps.
-        T = 2.5 # Temps total de simulation.
+        T = 0.5 # Temps total de simulation.
         Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
         Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
         print(f"Taille matrice : {Nx*Ny} éléments")
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         m = 1    
 
         # Paramètres des fentes    
-        v0 = 200 
+        v0 = 1000 
         a = L/100   # np.pi * 2 /k        # hauteur totale de chaque fente
         s = a * 3   # distance entre centres de fentes
         w = a       # épaisseur mur
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         j0, j1, i0, i1, i2, i3, v, x_fentes = potentielSlits(Dy, Ny, L, y0, s, w, v0, a)
  
-        k = 15 * np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a ; 15 * np.pi 
+        k = 15*np.pi # 4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a ; 15 * np.pi 
 
         v_g = h_bar * k / m
 
@@ -78,11 +78,10 @@ if __name__ == "__main__":
         M_csr = M.tocsr()
         mem_ar[ci] = 8 * M_csr.nnz
 
-    # if not convergence_calculated:
-    #     dy_list = [0.01, 0.02, 0.04, 0.06]
-    #     T = 0.05  
-    #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w)
-    #     convergence_calculated = True
+    if not convergence_calculated:
+        dy_list = [0.02, 0.04, 0.08]  
+        errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
+        convergence_calculated = True
 
     plt.loglog(d_ar[::-1],mem_ar[::-1]/1024.0**3,'-o')
     plt.title('Exigences de mémoire')
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     plt.savefig(output_file, dpi=150, bbox_inches='tight')
 
     distance_to_fentes = abs(x_fentes - x0)
-    cumul_cible = distance_to_fentes * 1.1
+    cumul_cible = distance_to_fentes * 1.5
 
     t_arrival = abs(cumul_cible) / v_g  # Temps pour atteindre x_center
     n0 = int(t_arrival / Dt)  # Convertir en pas de temps

@@ -270,7 +270,7 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     
     # Trouver le pas de temps où x_extract est atteint
     n_stop = len(mod_psis)  # Par défaut, utiliser tous les pas de temps
-    threshold = 0.01 * np.max([np.sum(np.abs(psi)**2) for psi in mod_psis])  # Seuil basé sur 1% de l'intensité max
+    threshold = 0.0001 * np.max([np.sum(np.abs(psi)**2) for psi in mod_psis])  
     
     for n, psi in enumerate(mod_psis[n0:], start=n0):
         intensity_at_extract = np.sum(np.abs(psi[:, j_extract])**2)
@@ -313,7 +313,7 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     lambda_ = 2 * np.pi / k  # Longueur d'onde
 
     # Lisser le patron simulé pour isoler l'enveloppe
-    window_size = 21  # Taille de la fenêtre pour le lissage (doit être impair)
+    window_size = 11  # Taille de la fenêtre pour le lissage (doit être impair)
     if window_size >= len(cumulative_intensity):
         window_size = len(cumulative_intensity) // 2 * 2 + 1 
     smoothed_intensity = savgol_filter(cumulative_intensity, window_size, 3)  # Lissage 
