@@ -221,10 +221,8 @@ def fit(y_screen, cumulative_intensity, s, a_initial, k, D, L):
     theo_intensity_initial = theo_intensity_initial * max_sim
     theo_intensity_fit = theo_intensity_fit * max_sim
 
-    # Afficher les résultats
     print(f"Largeur des fentes ajustée (a) : {a_fit:.4f} ± {a_err:.4f}")
 
-    # Tracé
     plt.figure(figsize=(10, 6))
     plt.plot(y_screen, cumulative_intensity, label='Patron simulé', color='blue')
     plt.plot(y_screen, theo_intensity_initial, 'k--', label='Patron théorique initial', alpha=0.7)
@@ -299,7 +297,6 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     # Calculer les temps correspondants
     times = np.arange(n0, n_stop) * Dt
 
-    # Tracer l'évolution de l'intensité
     plt.figure(figsize=(10, 6))
     plt.plot(times, intensities, label='Intensité à x_extract')
     plt.axhline(y=threshold, color='r', linestyle='--', label=f'Seuil = {threshold:.2e}')
@@ -319,15 +316,14 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
     plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.show()
 
-    # Ajouter un message pour guider l'ajustement du seuil
     if n_stop == len(mod_psis):
         print("Avertissement : n_stop a atteint la fin de la simulation. Le seuil est probablement trop élevé.")
     elif n_stop - n0 < 10:
         print("Avertissement : n_stop est très proche de n0. Le seuil est probablement trop bas.")
     else:
-        print(f"Seuil semble correct : n_stop détecté à t = {(n_stop - n0) * Dt + n0 * Dt:.4f} s")
+        print(f"n_stop détecté à t = {(n_stop - n0) * Dt + n0 * Dt:.4f} s")
     
-    # Calculer la vitesse expérimentale si x0, Dt et v_g sont fournis
+    # Calculer la vitesse expérimentale 
     if x0 is not None and Dt is not None and v_g is not None:
         if n_stop > n0:
             time_to_extract = (n_stop - n0) * Dt  # Temps écoulé depuis n0
@@ -386,7 +382,6 @@ def diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0=0, extract_frac=0.75, x0=N
         a_calculated = None
         print("Impossible de détecter les minimas.")
 
-    # --- Tracé du patron avec les minimas ---
     plt.figure(figsize=(10, 6))
     plt.plot(y_screen, cumulative_intensity, label='Patron simulé')
     plt.plot(y_screen, theo_intensity_norm, 'k--', label='Patron théorique')

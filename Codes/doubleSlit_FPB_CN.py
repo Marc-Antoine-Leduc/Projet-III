@@ -227,7 +227,7 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
     plt.title('Convergence numérique (norme euclidienne)')
     plt.grid(True, which="both", ls="--")
     plt.legend()
-    # Ajout des annotations pour l'ordre
+    
     for i in range(len(orders_l2)):
         plt.text(dy_list[i+1], errors_l2[i], f'Ordre={orders_l2[i]:.2f}', fontsize=10, ha='right')
     output_dir = "figures"

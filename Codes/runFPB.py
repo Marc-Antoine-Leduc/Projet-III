@@ -9,7 +9,7 @@ convergence_calculated = False
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.03, 0.04, 0.05], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
+    fact_ar = np.array([0.05], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
 
@@ -22,13 +22,13 @@ if __name__ == "__main__":
         L = 20 # Grandeur de la simulation (de la boîte).
         Dy = fact # Pas d'espace.
         Dt = (Dy**2) # Pas de temps.
-        T = 1 # Temps total de simulation.
+        T = 0.5 # Temps total de simulation.
         Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
         Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
         print(f"Taille matrice : {Nx*Ny} éléments")
         Nt = int(T / Dt) # Nombre de points de temps.
         print(f"Nombre de points de temps : {Nt}")
-        v = np.zeros((Ny,Ny), complex)  # Première définition du potentiel.
+        v = np.zeros((Ny,Ny), complex) 
 
         ### Nt * Dt = t = L/v_g = L * m / h_bar * k sous le modèle des électrons quasi-libres v_g = h_bar * k /m ###
 
@@ -51,13 +51,10 @@ if __name__ == "__main__":
 
         j0, j1, i0, i1, i2, i3, v, x_fentes = potentielSlits(Dy, Ny, L, y0, s, w, v0, a)
  
-        k =  4 * np.pi / a  # a/lambda = 2, lambda = a/2, k = 2pi/lambda = 4pi/a ; 15 * np.pi 
+        k =  3 * np.pi / a  # k = 2pi/lambda ; 15 * np.pi 
 
         v_g = h_bar * k / m
 
-        # v_abs = potentiel_absorbant(x, y, L, v, d_abs=2, strength=100) # Fucking instable
-        # v += v_abs
-        
         mat_t = time()
         A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
         mem = 8 * M.nnz + 8 * A.nnz
@@ -78,10 +75,10 @@ if __name__ == "__main__":
         M_csr = M.tocsr()
         mem_ar[ci] = 8 * M_csr.nnz
 
-    if not convergence_calculated:
-        dy_list = [0.02, 0.04, 0.08]  
-        errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
-        convergence_calculated = True
+    # if not convergence_calculated:       # Décommenter pour calculer l'erreur de convergence
+    #     dy_list = [0.02, 0.04, 0.08]  
+    #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
+    #     convergence_calculated = True
 
     plt.figure(figsize=(8, 6))  
     plt.loglog(d_ar[::-1], mem_ar[::-1]/1024.0**3, '-o')
