@@ -264,7 +264,7 @@ def theoreticalIntensity(y, s, a, D, k, I_0=1):
     sin_theta = y_centered / np.sqrt(y_centered**2 + D**2)
     
     # Terme de diffraction (enveloppe)
-    sinc_term = np.sinc((np.pi * a * sin_theta) / lambda_)  # np.sinc inclut déjà pi
+    sinc_term = np.sinc((a * sin_theta) / lambda_)  # np.sinc inclut déjà pi
     
     # Terme d'interférence
     cos_term = np.cos((np.pi * s * sin_theta) / lambda_)

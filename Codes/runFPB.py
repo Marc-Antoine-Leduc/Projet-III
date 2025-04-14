@@ -19,10 +19,10 @@ if __name__ == "__main__":
         print(f"Pas de discrétisation : dx=dy={fact}")
         d_ar[ci] = fact
 
-        L = 20 # Grandeur de la simulation (de la boîte).
+        L = 30 # Grandeur de la simulation (de la boîte).
         Dy = fact # Pas d'espace.
         Dt = (Dy**2) # Pas de temps.
-        T = 0.5 # Temps total de simulation.
+        T = 1 # Temps total de simulation.
         Nx = int(L/Dy) + 1 # Grandeur du grillage en x.
         Ny = int(L/Dy) + 1 # Grandeur du grillage en y.
         print(f"Taille matrice : {Nx*Ny} éléments")
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         mem_ar[ci] = 8 * M_csr.nnz
 
     # if not convergence_calculated:       # Décommenter pour calculer l'erreur de convergence
-    #     dy_list = [0.02, 0.04, 0.08]  
+    #     dy_list = [0.04, 0.08, 0.16]  
     #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
     #     convergence_calculated = True
 
