@@ -8,6 +8,7 @@ from scipy.sparse.linalg import factorized
 from scipy.sparse import lil_matrix, diags
 from potentiel import potentielSlits
 import os
+from scipy.sparse.linalg import bicgstab
 
 def psi0(x, y, x0, y0, sigma, k):
     N = 1 / (sigma * np.sqrt(np.pi))  # Facteur de normalisation
@@ -64,56 +65,113 @@ def buildMatrix(Ni, Nx, Ny, Dy, Dt, v):
 
 ####################################################
 
+# def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
+#     """
+#     Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
+
+#     Args :
+#         A (ndarray) : Matrice à résoudre.
+#         M (ndarray) : Matrice à résoudre.
+#         L (int) : Longueur du domaine.
+#         Nx (int) : Grandeur du grillage en x.
+#         Ny (int) : Grandeur du grillage en y.
+#         Ni (int) : Nombre de coefficients inconnus.
+#         Nt (int) : Nombre de pas de temps.
+#         (x0, y0) : Position initiale.
+
+#     Returns :
+#         mod_psis (array) : Vecteur des fonctions d'onde discrétisées.
+#     """
+
+#     solve = factorized(A)  # Pré-factorisation de A pour accélérer les résolutions
+
+#     x = np.linspace(0, L, Ny-2)
+#     y = np.linspace(0, L, Ny-2)
+#     x, y = np.meshgrid(x, y)
+
+#     psi = psi0(x, y, x0, y0, sigma, k)
+#     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
+#     mod_psis = [np.abs(psi)]  
+#     norms = []
+
+#     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
+#     norms.append(initial_norm)
+
+#     for i in range(1, Nt):
+#         psi_vect = psi.reshape(Ni)
+#         b = M @ psi_vect  # Utilisation directe de l'opérateur sparse
+#         psi_vect = solve(b)  # Résolution plus rapide
+#         psi = psi_vect.reshape((Nx-2, Ny-2))
+
+#         # Calcul de la norme et vérification de la stabilité
+#         norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
+#         norms.append(norme)
+#         max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
+#         #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
+        
+#         # Arrêt si la norme explose
+#         if norme > 1e10:
+#             print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
+#             break
+
+#         mod_psis.append(np.abs(psi)) 
+
+#     return mod_psis, initial_norm, norms
+
 def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
     """
-    Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
+    Résout le système A·x[n+1] = M·x[n] pour chaque pas de temps à l'aide d'un solveur itératif.
 
     Args :
-        A (ndarray) : Matrice à résoudre.
-        M (ndarray) : Matrice à résoudre.
+        A (ndarray) : Matrice à gauche.
+        M (ndarray) : Matrice à droite.
         L (int) : Longueur du domaine.
-        Nx (int) : Grandeur du grillage en x.
-        Ny (int) : Grandeur du grillage en y.
+        Nx (int) : Taille du grillage en x.
+        Ny (int) : Taille du grillage en y.
         Ni (int) : Nombre de coefficients inconnus.
         Nt (int) : Nombre de pas de temps.
         (x0, y0) : Position initiale.
+        Dy (float) : Pas d'espace.
+        k (float) : Nombre d'onde.
+        sigma (float) : Largeur du paquet d'onde initial.
 
     Returns :
-        mod_psis (array) : Vecteur des fonctions d'onde discrétisées.
+        mod_psis (list of 2D arrays) : Valeurs absolues des fonctions d'onde à chaque pas de temps.
+        initial_norm (float) : Norme initiale.
+        norms (list) : Norme à chaque pas de temps.
     """
-
-    solve = factorized(A)  # Pré-factorisation de A pour accélérer les résolutions
 
     x = np.linspace(0, L, Ny-2)
     y = np.linspace(0, L, Ny-2)
     x, y = np.meshgrid(x, y)
 
     psi = psi0(x, y, x0, y0, sigma, k)
-    psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
-    mod_psis = [np.abs(psi)]  
+    psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  # Conditions aux bords
+    mod_psis = [np.abs(psi)]
     norms = []
 
     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
     norms.append(initial_norm)
 
+    psi_vect = psi.reshape(Ni)
+
     for i in range(1, Nt):
-        psi_vect = psi.reshape(Ni)
-        b = M @ psi_vect  # Utilisation directe de l'opérateur sparse
-        psi_vect = solve(b)  # Résolution plus rapide
+        b = M @ psi_vect
+
+        psi_vect, info = bicgstab(A, b, x0=psi_vect, tol=1e-10)
+        if info != 0:
+            print(f"⚠️ bicgstab n'a pas convergé à l'étape {i}, info = {info}")
+
         psi = psi_vect.reshape((Nx-2, Ny-2))
 
-        # Calcul de la norme et vérification de la stabilité
-        norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
+        norme = np.sum(np.abs(psi)**2) * Dy * Dy
         norms.append(norme)
-        max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
-        #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
-        
-        # Arrêt si la norme explose
+
         if norme > 1e10:
-            print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
+            print(f"🚨 Simulation arrêtée à l'étape {i} : Norme = {norme}")
             break
 
-        mod_psis.append(np.abs(psi)) 
+        mod_psis.append(np.abs(psi))
 
     return mod_psis, initial_norm, norms
 
@@ -127,6 +185,7 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
     psi = psi0(x, y, x0, y0, sigma, k)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
     norms = []
+    mod_psis = [np.abs(psi)]
 
     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
     norms.append(initial_norm)
@@ -142,9 +201,10 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
         if norme > 1e10:
             print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
             break
+        mod_psis.append(np.abs(psi))
 
     final_psi = np.abs(psi)
-    return final_psi, initial_norm, norms
+    return final_psi, initial_norm, norms, mod_psis
 
 def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
     print("Calcul de l'erreur de convergence numérique...")

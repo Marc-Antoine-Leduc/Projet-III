@@ -1,17 +1,25 @@
 from potentiel import *
 from doubleSlit_FPB_CN import *
 from createAnimations import *
+from memory import *
 from time import time
 import tracemalloc
 import os
+from datetime import datetime
 
 convergence_calculated = False
 
 if __name__ == "__main__":
 
-    fact_ar = np.array([0.05], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("Test commencé à", current_time)
+
+    fact_ar = np.array([0.02,0.04,0.08,0.16], dtype=np.double); # np.array([0.0100, 0.02, 0.03, 0.04, 0.05], dtype=np.double); 
     mem_ar=np.zeros(fact_ar.size,dtype=np.double)
     d_ar=np.zeros(fact_ar.size,dtype=np.double)
+    mod_psis_ar = np.empty(fact_ar.size, dtype=object)
+    mod_psis_ar_tot = np.empty(fact_ar.size, dtype=object)
 
     ci = -1
     for fact in fact_ar:
@@ -71,14 +79,21 @@ if __name__ == "__main__":
         print(f"Utilisation actuelle : {current / 10**6} Mo; Pic : {peak / 10**6} Mo")
         tracemalloc.stop()
 
+        mod_psis_ar[ci] = mod_psis[int(0.85 * Nt)]
+        mod_psis_ar_tot[ci] = mod_psis
+
         # On calcul la mémoire ici
         M_csr = M.tocsr()
         mem_ar[ci] = 8 * M_csr.nnz
 
     # if not convergence_calculated:       # Décommenter pour calculer l'erreur de convergence
-    #     dy_list = [0.04, 0.08, 0.16]  
+    #     # dy_list = [0.04, 0.08, 0.16] 
+    #     dy_list = [0.02, 0.04, 0.08, 0.16] 
     #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
     #     convergence_calculated = True
+    
+    convergence(mod_psis_ar, d_ar)
+
 
     plt.figure(figsize=(8, 6))  
     plt.loglog(d_ar[::-1], mem_ar[::-1]/1024.0**3, '-o')
@@ -104,6 +119,7 @@ if __name__ == "__main__":
     x_extract = extract_frac * L
     D = abs(x_extract - 6)
 
+    mod_psis = mod_psis_ar_tot[0]
     final_psi = diffractionPatron(mod_psis, L, Ny, s, a, k, D, n0, extract_frac, x0, Dt, v_g)
     final_norm = np.sum(np.abs(mod_psis[-1])**2) * Dy * Dy
 
@@ -132,4 +148,4 @@ if __name__ == "__main__":
 
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)
+    # animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)
