@@ -92,7 +92,7 @@ if __name__ == "__main__":
     #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
     #     convergence_calculated = True
     
-    convergence(mod_psis_ar, d_ar)
+    # convergence(mod_psis_ar, d_ar) Décommenter pour calcul de convergence
 
 
     plt.figure(figsize=(8, 6))  
@@ -148,4 +148,4 @@ if __name__ == "__main__":
 
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    # animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)
+    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)
