@@ -55,16 +55,26 @@ if __name__ == "__main__":
 
         v_g = h_bar * k / m
 
+        extract_frac = 0.85
+
         mat_t = time()
         A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
         mem = 8 * M.nnz + 8 * A.nnz
         print(f"Mémoire utilisée pour les matrices : {mem/10**6:.2f} Mo")
         mat_t = time() - mat_t
         print(f'Temps d\'exécution de création de la matrice: : {mat_t*1000:.2f} ms')
-        
+
+        distance_to_fentes = abs(x_fentes - x0)
+        cumul_cible = distance_to_fentes * 1.5
+
+        t_arrival = abs(cumul_cible) / v_g  # Temps pour atteindre x_center
+        n0 = int(t_arrival / Dt)  # Convertir en pas de temps
+        n0 = max(0, min(n0, Nt-1))  # S'assurer que n0 est dans les limites [0, Nt-1])
+     
         tracemalloc.start()
         solvemat_t = time()
-        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma) # mod_psis est une liste de matrices (𝑁x−2)x(Ny-2)
+        #mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma) # mod_psis est une liste de matrices (𝑁x−2)x(Ny-2)
+        mod_psis, initial_norm, norms = solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, n0, Dt, extract_frac)
         solvemat_t = time() - solvemat_t
         print(f'Temps d\'exécution de résolution de la matrice: : {solvemat_t*1000:.2f} ms')
         current, peak = tracemalloc.get_traced_memory()
@@ -75,10 +85,10 @@ if __name__ == "__main__":
         M_csr = M.tocsr()
         mem_ar[ci] = 8 * M_csr.nnz
 
-    # if not convergence_calculated:       # Décommenter pour calculer l'erreur de convergence
-    #     dy_list = [0.04, 0.08, 0.16]  
-    #     errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0)
-    #     convergence_calculated = True
+    if not convergence_calculated:       # Décommenter pour calculer l'erreur de convergence
+        dy_list = [0.01, 0.02, 0.04, 0.08]  
+        errors_l2, orders_l2 = convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0, v_g, x_fentes, extract_frac)
+        convergence_calculated = True
 
     plt.figure(figsize=(8, 6))  
     plt.loglog(d_ar[::-1], mem_ar[::-1]/1024.0**3, '-o')
@@ -91,16 +101,8 @@ if __name__ == "__main__":
     output_file = os.path.join(output_dir, "mémoire.png")
     plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.show()
-
-    distance_to_fentes = abs(x_fentes - x0)
-    cumul_cible = distance_to_fentes * 1.5
-
-    t_arrival = abs(cumul_cible) / v_g  # Temps pour atteindre x_center
-    n0 = int(t_arrival / Dt)  # Convertir en pas de temps
-    n0 = max(0, min(n0, Nt-1))  # S'assurer que n0 est dans les limites [0, Nt-1])
     
     print(f"Début cumul | n0 : {n0}") 
-    extract_frac = 0.85
     x_extract = extract_frac * L
     D = abs(x_extract - 6)
 
@@ -128,8 +130,23 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "norm_evolution.png")
     plt.savefig(output_file, dpi=150, bbox_inches='tight')
+
+    plt.figure(figsize=(10, 6))
+    time_steps = np.arange(len(norms)) * Dt 
+    plt.semilogy(time_steps, norms, label='Norme de ψ')
+    plt.axhline(y=1.0, color='r', linestyle='--', label='Norme théorique (1)')
+    plt.xlabel('Temps (s)')
+    plt.ylabel('Norme (|ψ|² intégré)')
+    plt.title('Évolution de la norme de la fonction d\'onde (échelle logarithmique)')
+    plt.ylim(0.8, plt.ylim()[1]) 
+    plt.legend()
+    plt.grid(True, which="both", ls="--")
+    output_dir = "figures"
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, "log_norm_evolution.png")
+    plt.savefig(output_file, dpi=150, bbox_inches='tight')
     plt.show()
 
     print(f"Fonction d'onde bien normalisée : {0.95 <= initial_norm <= 1.05 and 0.95 <= final_norm <= 1.05}")
 
-    animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)
+    #animation = makeAnimationForSlits(mod_psis, v, L, Nt, n0, v_g, Dt, x0, j0, j1, i0, i1, i2, i3, w, Dy, extract_frac, x_fentes, x_extract, D, sigma)

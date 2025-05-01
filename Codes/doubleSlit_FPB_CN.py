@@ -64,89 +64,150 @@ def buildMatrix(Ni, Nx, Ny, Dy, Dt, v):
 
 ####################################################
 
-def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
-    """
-    Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
+# def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
+#     """
+#     Résoudre le système A·x[n+1] = M·x[n] pour chaque pas de temps.
 
-    Args :
-        A (ndarray) : Matrice à résoudre.
-        M (ndarray) : Matrice à résoudre.
-        L (int) : Longueur du domaine.
-        Nx (int) : Grandeur du grillage en x.
-        Ny (int) : Grandeur du grillage en y.
-        Ni (int) : Nombre de coefficients inconnus.
-        Nt (int) : Nombre de pas de temps.
-        (x0, y0) : Position initiale.
+#     Args :
+#         A (ndarray) : Matrice à résoudre.
+#         M (ndarray) : Matrice à résoudre.
+#         L (int) : Longueur du domaine.
+#         Nx (int) : Grandeur du grillage en x.
+#         Ny (int) : Grandeur du grillage en y.
+#         Ni (int) : Nombre de coefficients inconnus.
+#         Nt (int) : Nombre de pas de temps.
+#         (x0, y0) : Position initiale.
 
-    Returns :
-        mod_psis (array) : Vecteur des fonctions d'onde discrétisées.
-    """
+#     Returns :
+#         mod_psis (array) : Vecteur des fonctions d'onde discrétisées.
+#     """
 
-    solve = factorized(A)  # Pré-factorisation de A pour accélérer les résolutions
+#     solve = factorized(A)  # Pré-factorisation de A pour accélérer les résolutions
 
-    x = np.linspace(0, L, Ny-2)
-    y = np.linspace(0, L, Ny-2)
-    x, y = np.meshgrid(x, y)
+#     x = np.linspace(0, L, Ny-2)
+#     y = np.linspace(0, L, Ny-2)
+#     x, y = np.meshgrid(x, y)
 
-    psi = psi0(x, y, x0, y0, sigma, k)
-    psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
-    mod_psis = [np.abs(psi)]  
-    norms = []
+#     psi = psi0(x, y, x0, y0, sigma, k)
+#     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
+#     mod_psis = [np.abs(psi)]  
+#     norms = []
 
-    initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
-    norms.append(initial_norm)
+#     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
+#     norms.append(initial_norm)
 
-    for i in range(1, Nt):
-        psi_vect = psi.reshape(Ni)
-        b = M @ psi_vect  # Utilisation directe de l'opérateur sparse
-        psi_vect = solve(b)  # Résolution plus rapide
-        psi = psi_vect.reshape((Nx-2, Ny-2))
+#     for i in range(1, Nt):
+#         psi_vect = psi.reshape(Ni)
+#         b = M @ psi_vect  # Utilisation directe de l'opérateur sparse
+#         psi_vect = solve(b)  # Résolution plus rapide
+#         psi = psi_vect.reshape((Nx-2, Ny-2))
 
-        # Calcul de la norme et vérification de la stabilité
-        norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
-        norms.append(norme)
-        max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
-        #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
+#         # Calcul de la norme et vérification de la stabilité
+#         norme = np.sum(np.abs(psi)**2) * Dy * Dy  # Norme approchée
+#         norms.append(norme)
+#         max_psi_at_x0 = np.max(np.abs(psi[:, 0]))  # Valeur max à x=0
+#         #print(f"Step {i}: Norme = {norme}, max |psi| at x=0: {max_psi_at_x0}")
         
-        # Arrêt si la norme explose
-        if norme > 1e10:
-            print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
-            break
+#         # Arrêt si la norme explose
+#         if norme > 1e10:
+#             print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
+#             break
 
-        mod_psis.append(np.abs(psi)) 
+#         mod_psis.append(np.abs(psi)) 
 
-    return mod_psis, initial_norm, norms
+#     return mod_psis, initial_norm, norms
 
-def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma):
+# ***SolveMatrix pour utiliser plus petit pas***
+
+def solveMatrix(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, n0, Dt, extract_frac=0.85):
     solve = factorized(A)
-
     x = np.linspace(0, L, Ny-2)
     y = np.linspace(0, L, Ny-2)
     x, y = np.meshgrid(x, y)
-
     psi = psi0(x, y, x0, y0, sigma, k)
-    psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
+    psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0
+    mod_psis = []
     norms = []
-
     initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
     norms.append(initial_norm)
-
+    
     for i in range(1, Nt):
         psi_vect = psi.reshape(Ni)
         b = M @ psi_vect
         psi_vect = solve(b)
         psi = psi_vect.reshape((Nx-2, Ny-2))
+        norme = np.sum(np.abs(psi)**2) * Dy * Dy
+        norms.append(norme)
+        
+        if i >= n0:
+            mod_psis.append(np.abs(psi))
+        
+        if norme > 1e10:
+            print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
+            break
+    
+    return mod_psis, initial_norm, norms
+
+def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt, v_g, x_fentes, extract_frac=0.85):
+    from scipy.sparse.linalg import bicgstab
+
+    x = np.linspace(0, L, Ny-2)
+    y = np.linspace(0, L, Ny-2)
+    x, y = np.meshgrid(x, y)
+
+    psi = psi0(x, y, x0, y0, sigma, k)
+    psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
+    norms = []
+
+    initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
+    norms.append(initial_norm)
+
+    j_extract = int(extract_frac * (Ny-2))
+    max_intensity_at_extract = 0
+    threshold = None
+    n_stop = Nt
+
+    # Calculer n0 pour commencer à surveiller l'intensité après que le paquet ait atteint les fentes
+    distance_to_fentes = abs(x_fentes - x0)
+    t_arrival = distance_to_fentes / v_g
+    n0 = int(t_arrival / Dt)
+    n0 = max(0, min(n0, Nt-1))
+
+    for i in range(1, Nt):
+        psi_vect = psi.reshape(Ni)
+        b = M @ psi_vect
+        psi_vect, info = bicgstab(A, b, tol=1e-12)
+        if info != 0:
+            print(f"bicgstab failed to converge at step {i}, info={info}")
+            break
+        psi = psi_vect.reshape((Nx-2, Ny-2))
 
         norme = np.sum(np.abs(psi)**2) * Dy * Dy
         norms.append(norme)
+
+        if i >= n0:
+            intensity_at_extract = np.sum(np.abs(psi[:, j_extract])**2)
+            max_intensity_at_extract = max(max_intensity_at_extract, intensity_at_extract)
+            if threshold is None and max_intensity_at_extract > 0:
+                threshold = 0.05 * max_intensity_at_extract
+                if intensity_at_extract > threshold:
+                    n_stop = min(Nt, i + 20)
+                    print(f"n_stop détecté à i={i}, t={i*Dt:.4f} s, n_stop={n_stop}")
+
         if norme > 1e10:
             print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
             break
 
+        if i == n_stop:
+            break
+
+    if n_stop == Nt:
+        print("Avertissement : n_stop non détecté, seuil peut-être trop élevé.")
+
     final_psi = np.abs(psi)
     return final_psi, initial_norm, norms
 
-def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
+def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0, v_g=None, x_fentes=None, extract_frac=0.85):
     print("Calcul de l'erreur de convergence numérique...")
     solutions = []
     grids = []
@@ -163,7 +224,9 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
 
         Ni = (Nx - 2) * (Ny - 2)
         A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
-        final_psi, initial_norm, norms = solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma)
+        final_psi, initial_norm, norms = solveMatrixForConvergence(
+            A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt, v_g, x_fentes, extract_frac
+        )
 
         final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
         print(f"Norme initiale pour Dy = {Dy} : {initial_norm:.6f}")
@@ -177,14 +240,13 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
 
     errors_l2 = []
     for i in range(len(solutions) - 1):
-        psi1 = solutions[i]  # Grille fine (Dy1 petit)
-        psi2 = solutions[i + 1]  # Grille grossière (Dy2 grand)
-        Nx1, Ny1, Dy1 = grids[i]  # Grille fine
-        Nx2, Ny2, Dy2 = grids[i + 1]  # Grille grossière
+        psi1 = solutions[i]
+        psi2 = solutions[i + 1]
+        Nx1, Ny1, Dy1 = grids[i]
+        Nx2, Ny2, Dy2 = grids[i + 1]
 
-        # Calculer le facteur de sous-échantillonnage
         factor = max(1, (Nx1 - 2) // (Nx2 - 2))
-        target_size = Nx2 - 2  # Taille de la grille grossière
+        target_size = Nx2 - 2
         indices = np.arange(0, Nx1-2, factor)[:target_size]
         
         if len(indices) != target_size:
@@ -198,7 +260,7 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0):
             raise ValueError(f"Dimensions mismatch: psi1_subsampled {psi1_subsampled.shape}, psi2 {psi2.shape}")
 
         diff = np.abs(psi1_subsampled - psi2)
-        error_l2 = np.sqrt(np.sum(np.abs(diff)**2) * Dy2 * Dy2) / np.sqrt(final_norm)
+        error_l2 = np.sqrt(np.sum(np.abs(diff)**2) * Dy2 * Dy2)  # Retirer la normalisation par final_norm
         errors_l2.append(error_l2)
 
     orders_l2 = []
