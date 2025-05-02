@@ -4,6 +4,8 @@ from createAnimations import *
 from time import time
 import tracemalloc
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 convergence_calculated = False
 
@@ -162,7 +164,7 @@ if __name__ == "__main__":
     plt.xlabel('Temps (s)')
     plt.ylabel('Norme (|ψ|² intégré)')
     plt.title("Évolution de la norme de la fonction d'onde (log)")
-    plt.ylim(bottom=min(norms)*0.1, top=max(norms)*1.1)
+    plt.ylim(bottom=min(norms)*0.8, top=max(norms)*1.1)
     plt.legend()
     plt.grid(True, which='both', ls='--')
     # Sauvegarde
