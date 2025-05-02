@@ -1,4 +1,51 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
+def potentiel_cristal(Dy, Nx, Ny, a, sigma, V0, n_cells=2):
+    """
+    Génère un potentiel périodique 2D modélisant une chaîne 1D d'atomes
+    le long de l'axe y, située au centre du domaine en x.
+
+    Args:
+        Dy       (float): pas d'espace (m).
+        Nx, Ny   (int):   nombre de points du maillage en x et y.
+        a        (float): constante de maille (distance inter-atomique).
+        sigma    (float): largeur spatiale des puits gaussiens (m).
+        V0       (float): amplitude (hauteur) des barrières (>0 pour répulsif).
+        n_cells  (int):   nombre de cellules de chaque côté de l'origine.
+
+    Returns:
+        V (ndarray Nx×Ny): grille du potentiel.
+    """
+    # Coordonnées physiques
+    x = np.arange(Nx) * Dy
+    y = (np.arange(Ny) - (Ny-1)/2) * Dy
+
+    # Repère centré en x = L/2
+    x0 = (Nx-1)/2 * Dy
+
+    # Grille
+    X, Y = np.meshgrid(x, y, indexing='ij')
+
+    # Potentiel initial
+    V = np.zeros_like(X, dtype=float)
+
+    # Superposition de gaussiennes le long de y en x = x0
+    for m in range(-n_cells, n_cells+1):
+        yc = m * a
+        r2 = (X - x0)**2 + (Y - yc)**2
+        V += V0 * np.exp(-r2 / (2 * sigma**2))
+
+    ix_center = Nx // 2
+    plt.figure(figsize=(6,4))
+    plt.plot(y, V[ix_center, :])
+    plt.xlabel('Position y')
+    plt.ylabel('Potentiel V')
+    plt.title('Coupe centrale du potentiel périodique')
+    plt.grid(True)
+    plt.show()
+
+    return V
 
 def potentiel(y, mu=0, sigma=1):
     """
