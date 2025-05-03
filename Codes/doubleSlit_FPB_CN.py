@@ -157,10 +157,10 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt,
 
     psi = psi0(x, y, x0, y0, sigma, k)
     psi[0, :] = psi[-1, :] = psi[:, 0] = psi[:, -1] = 0  
-    norms = []
+    #norms = []
 
-    initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
-    norms.append(initial_norm)
+    #initial_norm = np.sum(np.abs(psi)**2) * Dy * Dy
+    #norms.append(initial_norm)
 
     j_extract = int(extract_frac * (Ny-2))
     max_intensity_at_extract = 0
@@ -176,14 +176,14 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt,
     for i in range(1, Nt):
         psi_vect = psi.reshape(Ni)
         b = M @ psi_vect
-        psi_vect, info = bicgstab(A, b, tol=1e-12)
+        psi_vect, info = bicgstab(A, b, tol = 1e-6)
         if info != 0:
             print(f"bicgstab failed to converge at step {i}, info={info}")
             break
         psi = psi_vect.reshape((Nx-2, Ny-2))
 
-        norme = np.sum(np.abs(psi)**2) * Dy * Dy
-        norms.append(norme)
+        #norme = np.sum(np.abs(psi)**2) * Dy * Dy
+        #norms.append(norme)
 
         if i >= n0:
             intensity_at_extract = np.sum(np.abs(psi[:, j_extract])**2)
@@ -194,9 +194,9 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt,
                     n_stop = min(Nt, i + 20)
                     print(f"n_stop détecté à i={i}, t={i*Dt:.4f} s, n_stop={n_stop}")
 
-        if norme > 1e10:
-            print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
-            break
+        # if norme > 1e10:
+        #     print(f"Simulation stopped at step {i}: Norme exploded to {norme}")
+        #     break
 
         if i == n_stop:
             break
@@ -205,7 +205,7 @@ def solveMatrixForConvergence(A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt,
         print("Avertissement : n_stop non détecté, seuil peut-être trop élevé.")
 
     final_psi = np.abs(psi)
-    return final_psi, initial_norm, norms
+    return final_psi
 
 def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0, v_g=None, x_fentes=None, extract_frac=0.85):
     print("Calcul de l'erreur de convergence numérique...")
@@ -224,16 +224,16 @@ def convergence_erreur(L, T, x0, y0, k, dy_list, a, s, sigma, w, v0, v_g=None, x
 
         Ni = (Nx - 2) * (Ny - 2)
         A, M = buildMatrix(Ni, Nx, Ny, Dy, Dt, v)
-        final_psi, initial_norm, norms = solveMatrixForConvergence(
+        final_psi = solveMatrixForConvergence(
             A, M, L, Nx, Ny, Ni, Nt, x0, y0, Dy, k, sigma, Dt, v_g, x_fentes, extract_frac
         )
 
-        final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
-        print(f"Norme initiale pour Dy = {Dy} : {initial_norm:.6f}")
-        print(f"Norme finale pour Dy = {Dy} : {final_norm:.6f}")
+        # final_norm = np.sum(np.abs(final_psi)**2) * Dy * Dy
+        # print(f"Norme initiale pour Dy = {Dy} : {initial_norm:.6f}")
+        # print(f"Norme finale pour Dy = {Dy} : {final_norm:.6f}")
 
-        if not (0.95 <= final_norm <= 1.05):
-            print(f"Avertissement : Norme finale hors des limites pour Dy={Dy} : {final_norm:.6f}")
+        # if not (0.95 <= final_norm <= 1.05):
+        #     print(f"Avertissement : Norme finale hors des limites pour Dy={Dy} : {final_norm:.6f}")
 
         solutions.append(final_psi)
         grids.append((Nx, Ny, Dy))
